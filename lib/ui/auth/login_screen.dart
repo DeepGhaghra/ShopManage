@@ -117,6 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           prefixIcon: Icon(Icons.lock),
                         ),
                         obscureText: true,
+                        onFieldSubmitted: (_) => _signIn(),
                         validator: (value) =>
                             value == null || value.isEmpty ? 'Required' : null,
                       ),

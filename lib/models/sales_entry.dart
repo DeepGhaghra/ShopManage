@@ -3,6 +3,7 @@ class SalesEntry {
   final DateTime date;
   final String invoiceno;
   final int partyId;
+  final String? partyName; // Joined from parties table
   final int productId; // Maps to product_head_id
   final int designId;   // Maps to products_design_id
   final int locationId; // Maps to location_id
@@ -18,6 +19,7 @@ class SalesEntry {
     required this.date,
     required this.invoiceno,
     required this.partyId,
+    this.partyName,
     required this.productId,
     required this.designId,
     required this.locationId,
@@ -35,6 +37,7 @@ class SalesEntry {
       date: DateTime.parse(json['date'] as String),
       invoiceno: json['invoiceno'] as String,
       partyId: json['party_id'] as int,
+      partyName: json['parties'] != null ? json['parties']['partyname'] as String? : null,
       productId: json['product_id'] as int,
       designId: json['design_id'] as int,
       locationId: json['location_id'] as int? ?? 0, // Fallback for old data

@@ -206,7 +206,7 @@ final shopStockProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async
         .from('stock')
         .select('''
           id, quantity,
-          products_design (id, design_no, product_head_id, product_head (id, product_name, product_rate)),
+          products_design (id, design_no, product_head_id, product_head (id, product_name, product_rate, folders (folder_name))),
           locations (id, name)
         ''')
         .eq('shop_id', activeShop.id)

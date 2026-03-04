@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../common/error_view.dart';
 import '../common/confirmation_dialog.dart';
 import '../common/app_version_display.dart';
+import '../../utils/error_translator.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -398,7 +399,7 @@ class _ExportBottomSheet extends ConsumerWidget {
               try {
                 await onExcel();
               } catch (e) {
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
               }
             },
           ),
@@ -412,7 +413,7 @@ class _ExportBottomSheet extends ConsumerWidget {
               try {
                 await onPdf();
               } catch (e) {
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
               }
             },
           ),
@@ -717,7 +718,7 @@ class _DetailViewSheet extends ConsumerWidget {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Center(child: Text('Error: $err')),
+                  error: (e, _) => Center(child: Text(ErrorTranslator.translate(e))),
                 ),
               ),
             ],

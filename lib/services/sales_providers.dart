@@ -32,6 +32,7 @@ class SalesRepository {
       'p_invoice_no': first.invoiceno,
       'p_party_id': first.partyId,
       'p_items': items,
+      'p_date': "${first.date.year}-${first.date.month.toString().padLeft(2, '0')}-${first.date.day.toString().padLeft(2, '0')}",
     });
   }
 
@@ -75,6 +76,7 @@ class SalesRepository {
       'p_new_invoice_no': first.invoiceno,
       'p_party_id': first.partyId,
       'p_new_items': items,
+      'p_date': "${first.date.year}-${first.date.month.toString().padLeft(2, '0')}-${first.date.day.toString().padLeft(2, '0')}",
     });
   }
 

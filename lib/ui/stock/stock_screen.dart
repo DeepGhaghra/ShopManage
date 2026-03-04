@@ -6,6 +6,7 @@ import '../../services/product_providers.dart';
 import '../../services/log_service.dart';
 import '../../models/product_head.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/error_translator.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
 
@@ -447,9 +448,9 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
                             } catch (e) {
                               setDialogState(() => isSaving = false);
                               if (ctx.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('❌ Error: $e'),
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('❌ ${ErrorTranslator.translate(e)}'),
                                     backgroundColor: Colors.red.shade700,
                                     behavior: SnackBarBehavior.floating,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -740,7 +741,7 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
       if (mounted) {
         scaffoldMsg.showSnackBar(
           SnackBar(
-            content: Text('❌ Synchronization failed: $e'),
+            content: Text('❌ ${ErrorTranslator.translate(e)}'),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -769,6 +770,7 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
   int? _toLocationId;
   int _quantity = 1;
   int _maxAvailableQty = 0;
+  final _qtyController = TextEditingController(text: '1');
   
   bool _isLoadingLocations = false;
   bool _isSaving = false;
@@ -877,7 +879,7 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error fetching stock: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
       }
     } finally {
       if (mounted) {
@@ -1014,6 +1016,7 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
                                         _fromLocationId = locData['id'] as int;
                                         _maxAvailableQty = loc['quantity'] as int;
                                         if (_quantity > _maxAvailableQty) _quantity = _maxAvailableQty;
+                                        _qtyController.text = _quantity.toString();
                                       });
                                     }
                                   },
@@ -1051,7 +1054,7 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
                         helperStyle: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.w500),
                       ),
                       keyboardType: TextInputType.number,
-                      initialValue: _quantity.toString(),
+                      controller: _qtyController,
                       onChanged: (val) => _quantity = int.tryParse(val) ?? 1,
                       validator: (val) {
                         final n = int.tryParse(val ?? '');
@@ -1142,7 +1145,7 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
       if (mounted) {
         scaffoldMsg.showSnackBar(
           SnackBar(
-            content: Text('❌ Transfer failed: $e'),
+            content: Text('❌ Transfer failed: ${ErrorTranslator.translate(e)}'),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

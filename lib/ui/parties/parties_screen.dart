@@ -4,6 +4,7 @@ import '../../services/party_providers.dart';
 import '../../services/core_providers.dart';
 import '../../models/party.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/error_translator.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
 
@@ -333,7 +334,7 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                           } catch (e) {
                             setState(() => isSaving = false);
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
                             }
                           }
                         }

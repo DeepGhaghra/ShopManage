@@ -82,24 +82,24 @@ class PurchaseRepository {
     });
   }
 
-  /// Saves multiple purchase lines in parallel using Future.wait().
-  /// Each line triggers addPurchase() — handles stock increment + transaction log.
+  /// Saves multiple purchase lines sequentially to prevent race conditions
+  /// on stock quantity updates for the same design+location combination.
   Future<void> saveBulkPurchase({
     required int shopId,
     required int partyId,
     required String date,
     required List<PurchaseLine> lines,
   }) async {
-    await Future.wait(
-      lines.map((line) => addPurchase(
+    for (final line in lines) {
+      await addPurchase(
         shopId:     shopId,
         date:       date,
         partyId:    partyId,
         designId:   line.designId,
         quantity:   line.quantity,
         locationId: line.locationId,
-      )),
-    );
+      );
+    }
   }
 }
 
@@ -117,7 +117,7 @@ final recentPurchasesProvider = FutureProvider<List<Map<String, dynamic>>>((ref)
       .from('purchase')
       .select('''
         id, date, quantity,
-        parties (party_name),
+        parties (partyname),
         products_design (design_no)
       ''')
       .eq('shop_id', activeShop.id)

@@ -8,6 +8,7 @@ import '../../models/party.dart';
 import '../../models/product_head.dart';
 import '../../models/pricelist.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/error_translator.dart';
 
 class PricelistScreen extends ConsumerStatefulWidget {
   const PricelistScreen({super.key});
@@ -48,7 +49,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
         });
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error fetching prices: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${ErrorTranslator.translate(e)}')));
     } finally {
       if (mounted) setState(() => _isLoadingPrices = false);
     }
@@ -93,7 +94,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving price: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${ErrorTranslator.translate(e)}')));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -195,7 +196,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                           },
                         ),
                         loading: () => const LinearProgressIndicator(),
-                        error: (e, _) => Text('Error: $e'),
+                        error: (e, _) => Text(ErrorTranslator.translate(e)),
                       ),
                     ],
                   ),
@@ -313,7 +314,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                   );
                 },
                 loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-                error: (e, _) => SliverFillRemaining(child: Center(child: Text('Error: $e'))),
+                error: (e, _) => SliverFillRemaining(child: Center(child: Text(ErrorTranslator.translate(e)))),
               ),
               
               // Bottom spacing

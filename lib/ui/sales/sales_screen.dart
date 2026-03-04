@@ -106,6 +106,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
   bool _isSaving = false;
   bool _isInitializing = false;
   int _formResetKey = 0;
+  DateTime _invoiceDate = DateTime.now();
 
   @override
   void initState() {
@@ -164,6 +165,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     setState(() {
       _editingInvoiceNo = invoiceNo;
       _invoiceController.text = invoiceNo;
+      _invoiceDate = entries.isNotEmpty ? entries.first.date : DateTime.now();
       _formResetKey++; // Force all Autocomplete widgets to refresh their initialValue
       
       // Try to re-hydrate party
@@ -286,7 +288,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       final entries = _lines.map((line) {
         return SalesEntry(
           id: 0,
-          date: DateTime.now(),
+          date: _invoiceDate,
           invoiceno: _invoiceController.text.trim(),
           partyId: _selectedParty!.id,
           partyName: _selectedParty!.partyName,
@@ -355,11 +357,13 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             party: _selectedParty!,
             invoiceNo: _invoiceController.text.trim(),
             lines: challanLines,
+            date: _invoiceDate,
           );
         }
 
         setState(() {
           _editingInvoiceNo = null;
+          _invoiceDate = DateTime.now();
           _selectedParty = null;
           _partySearchController.clear(); // Fixed: Clear the search field
           _lines.clear();
@@ -796,7 +800,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
 
                 final listView = RefreshIndicator(
                   color: AppColors.primary,
-                  onRefresh: () async => ref.refresh(groupedRecentSalesProvider.future),
+                  onRefresh: () async => ref.refresh(recentSalesProvider.future),
                   child: ListView.separated(
                   shrinkWrap: !isWide, 
                   physics: isWide ? const AlwaysScrollableScrollPhysics() : const NeverScrollableScrollPhysics(),
@@ -915,6 +919,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                     party: party,
                                     invoiceNo: invoiceNo,
                                     lines: challanLines,
+                                    date: firstEntry.date,
                                  );
                                } catch (e) {
                                  if (context.mounted) {
@@ -929,7 +934,8 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                       ),
                     );
                   },
-                );
+                ),
+              );
                 return isWide ? Expanded(child: listView) : listView;
               },
               loading: () => const Center(child: Padding(padding: EdgeInsets.all(32.0), child: CircularProgressIndicator())),

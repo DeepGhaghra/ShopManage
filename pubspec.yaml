@@ -45,7 +45,7 @@ dependencies:
   path_provider: ^2.1.5
   share_plus: ^12.0.1
   file_picker: ^10.3.10
-  connectivity_plus: ^6.1.1
+  connectivity_plus: ^7.0.0
   package_info_plus: ^9.0.0
   flutter_native_splash: ^2.4.4
 

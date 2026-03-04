@@ -6,6 +6,8 @@ class ProductHead {
   final DateTime timeAdded;
   final int shopId;
 
+  final String? brandName;
+
   ProductHead({
     required this.id,
     required this.productName,
@@ -13,9 +15,11 @@ class ProductHead {
     this.folderId,
     required this.timeAdded,
     required this.shopId,
+    this.brandName,
   });
 
   factory ProductHead.fromJson(Map<String, dynamic> json) {
+    final folder = json['folders'] as Map?;
     return ProductHead(
       id: json['id'] as int,
       productName: json['product_name'] as String,
@@ -23,6 +27,7 @@ class ProductHead {
       folderId: json['folder_id'] as int?,
       timeAdded: DateTime.parse(json['time_added'] as String),
       shopId: json['shop_id'] as int,
+      brandName: folder?['folder_name'] as String?,
     );
   }
 

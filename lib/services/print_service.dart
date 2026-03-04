@@ -28,160 +28,159 @@ class PrintService {
     required String invoiceNo,
     required List<ChallanLine> lines,
   }) async {
-    // Load default PDF fonts to prevent ANY network or asset fetching crashes
-    final font = pw.Font.helvetica();
-    final fontBold = pw.Font.helveticaBold();
-
-    const int totalRows = 13; // Fixed rows to match precise receipt aesthetic
-    final int filledRows = lines.length;
-    final int emptyRows = (totalRows - filledRows).clamp(0, totalRows);
-
-    final int totalQty = lines.fold(0, (sum, l) => sum + l.quantity);
-    
-    // Format date specifically as dd/MM/yyyy as seen in screenshot
-    final now = DateTime.now();
-    final String dateStr = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-    pw.TextStyle cellStyle({pw.Font? f, double size = 11, PdfColor? color}) =>
-        pw.TextStyle(font: f ?? font, fontSize: size, color: color);
-
-    // ── Column widths mapped proportionally to the screenshot ─────────────────
-    const double colSrNo    = 35;
-    const double colBrand   = 90;
-    const double colLoc     = 65;
-    const double colDesign  = 160;
-    const double colQty     = 45;
-
-    // ── Border Styles ─────────────────────────────────────────────────────────
-    final heavyBorder = pw.BoxDecoration(border: pw.Border.all(color: PdfColors.black, width: 1.5));
-    final rightLine = const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(width: 1.5, color: PdfColors.black)));
-
-    // ── Foreground Builders ───────────────────────────────────────────────────
-    pw.Widget buildDataCell(String text, {pw.Font? f, bool isBold = false, pw.Alignment align = pw.Alignment.centerLeft}) {
-      // Data cell WITHOUT horizontal borders. Minimum height prevents collapse.
-      return pw.Container(
-        constraints: const pw.BoxConstraints(minHeight: 24),
-        padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-        alignment: align,
-        child: pw.Text(text, style: cellStyle(f: f ?? (isBold ? fontBold : font), size: 10)),
-      );
-    }
-
-    pw.TableRow buildEmptyRow() {
-      // Empty rows with exact same minimum height.
-      // Because the Table will have ONLY verticalInside borders, this perfectly creates continuous vertical columns!
-      return pw.TableRow(
-        children: List.generate(6, (index) => pw.Container(
-          constraints: const pw.BoxConstraints(minHeight: 24),
-        )),
-      );
-    }
+    // Load Unicode-supporting font (Roboto) to handle special characters and regional symbols
+    final font = await PdfGoogleFonts.robotoRegular();
+    final fontBold = await PdfGoogleFonts.robotoBold();
 
     await Printing.layoutPdf(
       name: 'Challan-$invoiceNo',
       onLayout: (PdfPageFormat format) async {
         final pdf = pw.Document();
 
-        // Standard margins
-        final isRoll = format.width < 300;
-        final margin = isRoll 
-            ? const pw.EdgeInsets.all(10)
-            : const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 24);
+        // ── Custom Challan Size: 10.5cm x 13.5cm ──
+        const double cm = PdfPageFormat.cm;
+        const challanFormat = PdfPageFormat(10.5 * cm, 13.5 * cm, marginAll: 0.0);
+        
+        // Format date specifically as dd/MM/yyyy
+        final now = DateTime.now();
+        final String dateStr = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
 
+        // Font sizes - Optimized for 10.5cm width
+        const double shopSize   = 14.0;
+        const double titleSize  = 10.0;
+        const double headerSize = 9.0;
+        const double dataSize   = 8.5;
+        const double smallSize  = 7.5;
+        
+        // Table Rows calculation for 13.5cm height
+        const int totalRows = 12;
+        final int filledRows = lines.length;
+        final int emptyRows = (totalRows - filledRows).clamp(0, totalRows);
+        final int totalQty = lines.fold(0, (sum, l) => sum + l.quantity);
+
+        // Column Widths for 10.5cm (approx 297 points)
+        const double colSrNo  = 25.0;
+        const double colBrand = 65.0;
+        const double colLoc   = 65.0;
+        const double colQty   = 40.0;
+        
+        // Margins & Borders
+        const margin = pw.EdgeInsets.all(10);
+        const double borderWidth = 0.8;
+
+        // ── Styles ──
+        final heavyBorder = pw.BoxDecoration(border: pw.Border.all(color: PdfColors.black, width: borderWidth));
+        final rightLine = pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(width: borderWidth, color: PdfColors.black)));
+        pw.TextStyle cellStyle({pw.Font? f, double? size, PdfColor? color}) =>
+            pw.TextStyle(font: f ?? font, fontSize: size ?? dataSize, color: color);
+
+        // ── Builders ──
+        pw.Widget buildDataCell(String text, {pw.Font? f, bool isBold = false, pw.Alignment align = pw.Alignment.centerLeft}) {
+          return pw.Container(
+            constraints: const pw.BoxConstraints(minHeight: 20),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+            alignment: align,
+            child: pw.Text(text, style: cellStyle(f: f ?? (isBold ? fontBold : font), size: dataSize)),
+          );
+        }
+
+        pw.TableRow buildEmptyRow() {
+          return pw.TableRow(
+            children: List.generate(5, (index) => pw.Container(
+              constraints: const pw.BoxConstraints(minHeight: 20),
+            )),
+          );
+        }
+
+        // ── Page Build ──
         pdf.addPage(
           pw.Page(
-            pageFormat: format,
+            pageFormat: challanFormat,
             margin: margin,
             build: (context) {
               return pw.Container(
-                // The master border of the entire receipt document
                 decoration: heavyBorder,
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-                  mainAxisSize: pw.MainAxisSize.min, // shrink wrap to prevent infinite height crashes
+                  mainAxisSize: pw.MainAxisSize.min,
                   children: [
 
-                    // 1. ── Header Title Block ───────────────────────────────────────
-                    // NO bottom border. Background is pure white.
+                    // 1. Header Block
                     pw.Container(
-                      padding: const pw.EdgeInsets.only(top: 16, bottom: 8),
+                      padding: const pw.EdgeInsets.only(top: 12, bottom: 6),
                       child: pw.Column(
                         children: [
                           pw.Text((shop.shopShortName ?? shop.shopName).toUpperCase(),
-                              style: cellStyle(f: fontBold, size: 20)
+                              style: cellStyle(f: fontBold, size: shopSize)
                           ),
-                          pw.SizedBox(height: 4),
+                          pw.SizedBox(height: 1),
                           pw.Text('ESTIMATE',
-                              style: cellStyle(f: fontBold, size: 14)
+                              style: cellStyle(f: fontBold, size: titleSize)
                           ),
                         ],
                       ),
                     ),
 
-                    // 2. ── Party Details Block ──────────────────────────────────────
-                    // Notice: Still no separating border!
+                    // 2. Details Block
                     pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                         children: [
                           pw.Row(
                             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
-                              pw.Text('M/s: ${party.partyName.toUpperCase()}', style: cellStyle(f: fontBold, size: 14)),
-                              pw.Text('Date: $dateStr', style: cellStyle(f: fontBold, size: 14)),
+                              pw.Expanded(
+                                child: pw.Text('M/s: ${party.partyName.toUpperCase()}', 
+                                  style: cellStyle(f: fontBold, size: headerSize),
+                                  maxLines: 1,
+                                  overflow: pw.TextOverflow.clip
+                                )
+                              ),
+                              pw.SizedBox(width: 5),
+                              pw.Text('Date: $dateStr', style: cellStyle(f: fontBold, size: headerSize)),
                             ],
                           ),
-                          if (party.mobile != null || party.city != null) ...[
-                            pw.SizedBox(height: 4),
-                            pw.Row(
-                              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                              children: [
-                                pw.Text('Mobile: ${party.mobile ?? ''}', style: cellStyle(size: 12)),
-                                pw.Text('City: ${party.city ?? ''}', style: cellStyle(size: 12)),
-                              ],
-                            ),
-                          ],
+                          pw.SizedBox(height: 1),
+                          pw.Row(
+                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                            children: [
+                              pw.Text('Mobile: ${party.mobile ?? ''}', style: cellStyle(size: smallSize)),
+                              pw.Text('City: ${party.city ?? ''}', style: cellStyle(size: smallSize)),
+                            ],
+                          ),
                         ]
                       )
                     ),
                     
-                    pw.SizedBox(height: 8), // Gap before table starts
+                    pw.SizedBox(height: 2),
 
-                    // 3. ── The Mock Stack Component (Table) ───────────────────────
-                    // Replaced `pw.Stack` with a strict `pw.Table` because Web Engine crashes on unbounded stacks.
-                    // Instead of a Stack, we use a Table with ZERO HORIZONTAL BORDERS. This achieves the EXACT same effect!
+                    // 3. Main Data Table
                     pw.Table(
-                      // ONLY draw vertical lines inside the table. Do not draw horizontal lines!
-                      border: const pw.TableBorder(
-                        verticalInside: pw.BorderSide(width: 1.5, color: PdfColors.black),
-                        top: pw.BorderSide(width: 1.5, color: PdfColors.black), // Upper line under party
-                        bottom: pw.BorderSide(width: 1.5, color: PdfColors.black), // Line above total block
+                      border: pw.TableBorder(
+                        verticalInside: pw.BorderSide(width: borderWidth, color: PdfColors.black),
+                        top: pw.BorderSide(width: borderWidth, color: PdfColors.black), 
                       ),
-                      columnWidths: const {
+                      columnWidths: {
                         0: pw.FixedColumnWidth(colSrNo),
                         1: pw.FixedColumnWidth(colBrand),
                         2: pw.FixedColumnWidth(colLoc),
-                        3: pw.FixedColumnWidth(colDesign),
+                        3: pw.FlexColumnWidth(1), 
                         4: pw.FixedColumnWidth(colQty),
-                        5: pw.FlexColumnWidth(1), 
                       },
                       children: [
-                        // 1) Header Row (We manually inject a bottom line specifically for this row using a Custom Container decoration trick)
+                        // Header row
                         pw.TableRow(
                           children: [
-                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: 1.5))), padding: const pw.EdgeInsets.symmetric(vertical: 6), alignment: pw.Alignment.center, child: pw.Text('Sr No', style: cellStyle(f: fontBold, size: 10))),
-                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: 1.5))), padding: const pw.EdgeInsets.symmetric(vertical: 6), alignment: pw.Alignment.center, child: pw.Text('Brand', style: cellStyle(f: fontBold, size: 10))),
-                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: 1.5))), padding: const pw.EdgeInsets.symmetric(vertical: 6), alignment: pw.Alignment.center, child: pw.Text('Location', style: cellStyle(f: fontBold, size: 10))),
-                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: 1.5))), padding: const pw.EdgeInsets.symmetric(vertical: 6), alignment: pw.Alignment.center, child: pw.Text('Design No.', style: cellStyle(f: fontBold, size: 10))),
-                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: 1.5))), padding: const pw.EdgeInsets.symmetric(vertical: 6), alignment: pw.Alignment.center, child: pw.Text('Qty', style: cellStyle(f: fontBold, size: 10))),
-                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: 1.5))), padding: const pw.EdgeInsets.symmetric(vertical: 6)),
+                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: borderWidth))), padding: const pw.EdgeInsets.symmetric(vertical: 3), alignment: pw.Alignment.center, child: pw.Text('Sr No', style: cellStyle(f: fontBold, size: headerSize))),
+                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: borderWidth))), padding: const pw.EdgeInsets.symmetric(vertical: 3), alignment: pw.Alignment.center, child: pw.Text('Brand', style: cellStyle(f: fontBold, size: headerSize))),
+                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: borderWidth))), padding: const pw.EdgeInsets.symmetric(vertical: 3), alignment: pw.Alignment.center, child: pw.Text('Location', style: cellStyle(f: fontBold, size: headerSize))),
+                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: borderWidth))), padding: const pw.EdgeInsets.symmetric(vertical: 3), alignment: pw.Alignment.center, child: pw.Text('Design No.', style: cellStyle(f: fontBold, size: headerSize))),
+                            pw.Container(decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: borderWidth))), padding: const pw.EdgeInsets.symmetric(vertical: 3), alignment: pw.Alignment.center, child: pw.Text('Qty', style: cellStyle(f: fontBold, size: headerSize))),
                           ],
                         ),
                         
-                        // 2) Data Rows (These have NO bottom border padding. Just vertical lines from the TableBorder!)
+                        // Data rows
                         for (int i = 0; i < filledRows; i++)
                           pw.TableRow(
                             children: [
@@ -190,53 +189,50 @@ class PrintService {
                               buildDataCell(lines[i].locationName, align: pw.Alignment.center),
                               buildDataCell(lines[i].designNo, align: pw.Alignment.center),
                               buildDataCell(lines[i].quantity.toString(), align: pw.Alignment.center),
-                              pw.Container(),
                             ]
                           ),
 
-                        // 3) Empty Filler Rows (These continue the vertical lines flawlessly downwards to the bottom!)
                         for (int i = 0; i < emptyRows; i++) buildEmptyRow(),
                       ],
                     ),
 
-                    // 4. ── Bottom Total Block ───────────────────────────────────────
+                    // 4. Total Row
                     pw.Container(
                       decoration: pw.BoxDecoration(
                         color: PdfColors.white,
-                        border: pw.Border.symmetric(horizontal: pw.BorderSide(width: 1.5, color: PdfColors.black)), // Top border connects to table
+                        border: pw.Border(
+                          top: pw.BorderSide(width: borderWidth, color: PdfColors.black),
+                          bottom: pw.BorderSide(width: borderWidth, color: PdfColors.black),
+                        ),
                       ),
                       child: pw.Row(
                         children: [
-                          // Spans the first 4 columns, aligned right
-                          pw.Container(
-                            width: colSrNo + colBrand + colLoc + colDesign,
-                            padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                            alignment: pw.Alignment.centerRight,
-                            decoration: rightLine,
-                            child: pw.Text('Total', style: cellStyle(f: fontBold, size: 12)),
+                          pw.Expanded(
+                            child: pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                              alignment: pw.Alignment.centerRight,
+                              decoration: rightLine, 
+                              child: pw.Text('Total', style: cellStyle(f: fontBold, size: headerSize)),
+                            ),
                           ),
-                          // The total qty number precisely bound
                           pw.Container(
                             width: colQty,
-                            padding: const pw.EdgeInsets.symmetric(vertical: 6),
+                            padding: const pw.EdgeInsets.symmetric(vertical: 4),
                             alignment: pw.Alignment.center,
-                            decoration: rightLine,
-                            child: pw.Text(totalQty.toString(), style: cellStyle(f: fontBold, size: 12)),
+                            child: pw.Text(totalQty.toString(), style: cellStyle(f: fontBold, size: headerSize)),
                           ),
-                          // Empty blank rectangle finishing the edge
-                          pw.Expanded(child: pw.Container()),
                         ]
                       )
                     ),
 
-                    // 5. ── Delivery Footer ──────────────────────────────────────────
+                    // 5. Footer
                     pw.Container(
-                      height: 45,
-                      padding: const pw.EdgeInsets.all(8),
+                      height: 35,
+                      padding: const pw.EdgeInsets.all(4),
                       child: pw.Row(
                         crossAxisAlignment: pw.CrossAxisAlignment.center,
                         children: [
-                          pw.Text('Delivery By:', style: cellStyle(size: 10)),
+                          pw.Text('Delivery By:', style: cellStyle(size: smallSize)),
                         ]
                       )
                     )

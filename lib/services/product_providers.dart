@@ -9,11 +9,12 @@ class ProductRepository {
 
   ProductRepository(this._client);
 
-  Future<List<ProductHead>> getProductHeads(int shopId) async {
+  Future<List<ProductHead>> getActiveProductHeads(int shopId) async {
     final response = await _client
         .from('product_head')
-        .select()
+        .select('*, folders!inner(folder_name, is_active)')
         .eq('shop_id', shopId)
+        .eq('folders.is_active', true)
         .order('product_name', ascending: true);
     return response.map((json) => ProductHead.fromJson(json)).toList();
   }
@@ -37,7 +38,7 @@ final productRepositoryProvider = Provider<ProductRepository>((ref) {
 final productHeadsProvider = FutureProvider<List<ProductHead>>((ref) async {
   final activeShop = ref.watch(activeShopProvider);
   if (activeShop == null) return [];
-  return ref.watch(productRepositoryProvider).getProductHeads(activeShop.id);
+  return ref.watch(productRepositoryProvider).getActiveProductHeads(activeShop.id);
 });
 
 // Family to provide designs for a given product head

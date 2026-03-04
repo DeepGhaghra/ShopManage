@@ -10,7 +10,11 @@ import '../../services/party_providers.dart';
 import '../../services/stock_providers.dart';
 import '../../models/party.dart';
 import '../../services/core_providers.dart';
+import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
+import '../common/loading_overlay.dart';
+import '../common/confirmation_dialog.dart';
+import '../../utils/error_translator.dart';
 
 // ─── Local line model for Manual Entry tab ─────────────────────────────────────
 class _ManualLine {
@@ -94,7 +98,21 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
 
   // ── Manual tab helpers ───────────────────────────────────────────────────────
   void _addManualLine() => setState(() => _manualLines.add(_ManualLine()));
-  void _removeManualLine(int i) {
+  Future<void> _removeManualLine(int i) async {
+    final line = _manualLines[i];
+    if (line.designMap != null) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => ConfirmationDialog(
+          title: 'Remove Item?',
+          message: 'Are you sure you want to remove ${line.designNo}?',
+          confirmLabel: 'Remove',
+          confirmColor: Colors.red,
+          icon: Icons.delete_outline,
+        ),
+      );
+      if (confirm != true) return;
+    }
     setState(() {
       _manualLines.removeAt(i);
       if (_manualLines.isEmpty) _manualLines.add(_ManualLine());
@@ -271,6 +289,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       ref.invalidate(shopStockProvider);
 
       if (mounted) {
+        ref.read(logServiceProvider).success('Purchase', 'Saved ${lines.length} purchase entries for party "${_selectedParty!.partyName}"');
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('${lines.length} purchase entries saved!'),
           backgroundColor: AppColors.success,
@@ -286,8 +305,9 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
           _formResetKey++;
         });
       }
-    } catch (e) {
-      if (mounted) _showError('Save failed: $e');
+    } catch (e, stack) {
+      ref.read(logServiceProvider).error('Purchase', 'Failed to save purchase entries', e, stack);
+      if (mounted) _showError('Save failed: ${ErrorTranslator.translate(e)}');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -306,11 +326,12 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   @override
   Widget build(BuildContext context) {
     final partiesAsync   = ref.watch(partiesProvider);
-    final designsAsync   = ref.watch(designsProvider);
+    final designsAsync   = ref.watch(sortedDesignsProvider);
     final locationsAsync = ref.watch(locationsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
@@ -340,16 +361,18 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
           ],
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
-          child: Column(
-            children: [
-              // ── Shared header: Party + Date ──────────────────────────────────────
-              KeyedSubtree(
-                key: ValueKey('header_$_formResetKey'),
-                child: _buildHeader(partiesAsync),
-              ),
+      body: Stack(
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: Column(
+                children: [
+                  // ── Shared header: Party + Date ──────────────────────────────────────
+                  KeyedSubtree(
+                    key: ValueKey('header_$_formResetKey'),
+                    child: _buildHeader(partiesAsync),
+                  ),
 
               // ── Tab views ────────────────────────────────────────────────────────
               Expanded(
@@ -358,16 +381,14 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                   controller: _tabController,
                   children: [
                     // Tab 1 — Manual Entry
-                    designsAsync.when(
-                      data: (designs) {
-                        final sortedDesigns = List<Map<String, dynamic>>.from(designs)
-                          ..sort((a, b) => (a['design_no'] as String).toUpperCase().compareTo((b['design_no'] as String).toUpperCase()));
-                        return locationsAsync.when(
-                          data: (locations) => _buildManualTab(sortedDesigns, locations),
-                          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                          error: (e, _) => Center(child: Text('Error: $e')),
-                        );
-                      },
+                     designsAsync.when(
+                       data: (designs) {
+                         return locationsAsync.when(
+                           data: (locations) => _buildManualTab(designs, locations),
+                           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                           error: (e, _) => Center(child: Text('Error: $e')),
+                         );
+                       },
                       loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
                       error: (e, _) => Center(child: Text('Error: $e')),
                     ),
@@ -388,8 +409,13 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
           ),
         ),
       ),
-    );
-  }
+      if (_isSaving)
+        const LoadingOverlay(message: 'Saving...'),
+    ],
+  ),
+);
+}
+
 
   // ── Shared Header ─────────────────────────────────────────────────────────────
   Widget _buildHeader(AsyncValue<List<Party>> partiesAsync) {
@@ -398,7 +424,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       width: double.infinity,
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
+          constraints: const BoxConstraints(maxWidth: 800),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Row(
@@ -566,8 +592,9 @@ Widget _buildManualTab(List<Map<String, dynamic>> designs, List<Map<String, dyna
 
   Widget _buildManualRow(int index, List<Map<String, dynamic>> designs, List<Map<String, dynamic>> locations) {
     final line = _manualLines[index];
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -608,8 +635,8 @@ Widget _buildManualTab(List<Map<String, dynamic>> designs, List<Map<String, dyna
                         final d = options.elementAt(i);
                         return ListTile(
                           dense: true,
-                          title: Text(d['design_no'] as String, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                          subtitle: Text((d['product_head']?['product_name'] ?? '') as String, style: const TextStyle(fontSize: 11)),
+                          title: Text(d['design_no'] as String, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                          subtitle: Text((d['product_head']?['product_name'] ?? '') as String, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
                           onTap: () => onSel(d),
                         );
                       },
@@ -661,7 +688,7 @@ Widget _buildManualTab(List<Map<String, dynamic>> designs, List<Map<String, dyna
                         final l = options.elementAt(i);
                         return ListTile(
                           dense: true,
-                          title: Text(l['name'] as String, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                          title: Text(l['name'] as String, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                           onTap: () => onSel(l),
                         );
                       },
@@ -674,7 +701,7 @@ Widget _buildManualTab(List<Map<String, dynamic>> designs, List<Map<String, dyna
           const SizedBox(width: 8),
           // Qty
           SizedBox(
-            width: 72,
+            width: 60,
             child: TextFormField(
               key: ValueKey('qty_$index'),
               initialValue: line.quantity.toString(),
@@ -700,8 +727,9 @@ Widget _buildManualTab(List<Map<String, dynamic>> designs, List<Map<String, dyna
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── Tab 2: Bulk Upload ─────────────────────────────────────────────────────────
   Widget _buildBulkTab(List<Map<String, dynamic>> designs, List<Map<String, dynamic>> locations) {

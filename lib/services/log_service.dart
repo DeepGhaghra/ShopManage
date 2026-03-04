@@ -1,0 +1,189 @@
+import 'dart:collection';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
+
+// ─── Log Level ──────────────────────────────────────────────────────────────
+enum LogLevel { info, success, warning, error }
+
+// ─── Log Entry ──────────────────────────────────────────────────────────────
+class LogEntry {
+  final DateTime timestamp;
+  final LogLevel level;
+  final String module;   // e.g. 'Sales', 'Stock', 'Auth', 'Purchase'
+  final String message;
+  final String? details; // optional stack trace or extra info
+
+  LogEntry({
+    required this.level,
+    required this.module,
+    required this.message,
+    this.details,
+  }) : timestamp = DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+    'timestamp': timestamp.toIso8601String(),
+    'level': level.name,
+    'module': module,
+    'message': message,
+    if (details != null) 'details': details,
+  };
+
+  factory LogEntry.fromJson(Map<String, dynamic> json) => LogEntry(
+    level: LogLevel.values.firstWhere((e) => e.name == json['level'], orElse: () => LogLevel.info),
+    module: json['module'] ?? '',
+    message: json['message'] ?? '',
+    details: json['details'],
+  );
+
+  String get formattedTime => DateFormat('HH:mm:ss').format(timestamp);
+  String get formattedDate => DateFormat('dd MMM yyyy').format(timestamp);
+  String get fullFormatted => DateFormat('dd MMM yyyy HH:mm:ss').format(timestamp);
+
+  @override
+  String toString() => '[$fullFormatted] [${level.name.toUpperCase()}] [$module] $message${details != null ? '\n  → $details' : ''}';
+}
+
+// ─── Log Service ────────────────────────────────────────────────────────────
+class LogService {
+  static const int _maxInMemoryLogs = 500;
+  final List<LogEntry> _logs = [];
+  File? _logFile;
+  bool _initialized = false;
+
+  UnmodifiableListView<LogEntry> get logs => UnmodifiableListView(_logs);
+
+  int get totalCount => _logs.length;
+  int get errorCount => _logs.where((l) => l.level == LogLevel.error).length;
+  int get warningCount => _logs.where((l) => l.level == LogLevel.warning).length;
+  int get successCount => _logs.where((l) => l.level == LogLevel.success).length;
+
+  /// Initialize file-based logging (skipped on web)
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
+
+    if (!kIsWeb) {
+      try {
+        final dir = await getApplicationDocumentsDirectory();
+        final logDir = Directory('${dir.path}/ShopManage/logs');
+        if (!await logDir.exists()) {
+          await logDir.create(recursive: true);
+        }
+        final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+        _logFile = File('${logDir.path}/app_log_$today.txt');
+        
+        // Load existing logs from today's file
+        if (await _logFile!.exists()) {
+          final lines = await _logFile!.readAsLines();
+          // Only load last 200 lines to keep memory low
+          final start = lines.length > 200 ? lines.length - 200 : 0;
+          for (int i = start; i < lines.length; i++) {
+            try {
+              final json = jsonDecode(lines[i]);
+              _logs.add(LogEntry.fromJson(json));
+            } catch (_) {}
+          }
+        }
+        
+        _log(LogLevel.info, 'System', 'Log service initialized. File: ${_logFile!.path}');
+      } catch (e) {
+        debugPrint('LogService init error: $e');
+        _log(LogLevel.warning, 'System', 'File logging unavailable, using in-memory only', e.toString());
+      }
+    } else {
+      _log(LogLevel.info, 'System', 'Log service initialized (Web - in-memory only)');
+    }
+  }
+
+  // ── Core log method ──────────────────────────────────────────────────────
+  void _log(LogLevel level, String module, String message, [String? details]) {
+    final entry = LogEntry(level: level, module: module, message: message, details: details);
+    _logs.add(entry);
+
+    // Trim old logs to prevent memory issues
+    if (_logs.length > _maxInMemoryLogs) {
+      _logs.removeRange(0, _logs.length - _maxInMemoryLogs);
+    }
+
+    // Write to file (non-blocking)
+    if (_logFile != null && !kIsWeb) {
+      _logFile!.writeAsString('${jsonEncode(entry.toJson())}\n', mode: FileMode.append).catchError((e) {
+        debugPrint('Log write error: $e');
+      });
+    }
+
+    // Also print in debug mode
+    if (kDebugMode) {
+      debugPrint(entry.toString());
+    }
+  }
+
+  // ── Public API ───────────────────────────────────────────────────────────
+  void info(String module, String message, [String? details]) =>
+      _log(LogLevel.info, module, message, details);
+
+  void success(String module, String message, [String? details]) =>
+      _log(LogLevel.success, module, message, details);
+
+  void warning(String module, String message, [String? details]) =>
+      _log(LogLevel.warning, module, message, details);
+
+  void error(String module, String message, [dynamic error, StackTrace? stack]) =>
+      _log(LogLevel.error, module, message, _formatError(error, stack));
+
+  String _formatError(dynamic error, StackTrace? stack) {
+    final buffer = StringBuffer();
+    if (error != null) buffer.writeln('Error: $error');
+    if (stack != null) buffer.writeln('Stack: ${stack.toString().split('\n').take(5).join('\n')}');
+    return buffer.toString().trim();
+  }
+
+  // ── Filtering ────────────────────────────────────────────────────────────
+  List<LogEntry> getByLevel(LogLevel level) =>
+      _logs.where((l) => l.level == level).toList();
+
+  List<LogEntry> getByModule(String module) =>
+      _logs.where((l) => l.module.toLowerCase() == module.toLowerCase()).toList();
+
+  List<LogEntry> search(String query) {
+    final q = query.toLowerCase();
+    return _logs.where((l) =>
+        l.message.toLowerCase().contains(q) ||
+        l.module.toLowerCase().contains(q) ||
+        (l.details?.toLowerCase().contains(q) ?? false)
+    ).toList();
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+  String exportAsText() {
+    return _logs.map((l) => l.toString()).join('\n');
+  }
+
+  // ── Clear ────────────────────────────────────────────────────────────────
+  void clearLogs() {
+    _logs.clear();
+    _log(LogLevel.info, 'System', 'Logs cleared by user');
+  }
+
+  /// Get all log files (for multi-day browsing)
+  Future<List<File>> getLogFiles() async {
+    if (kIsWeb || _logFile == null) return [];
+    try {
+      final dir = _logFile!.parent;
+      final files = await dir.list().where((e) => e is File && e.path.endsWith('.txt')).cast<File>().toList();
+      files.sort((a, b) => b.path.compareTo(a.path)); // newest first
+      return files;
+    } catch (_) {
+      return [];
+    }
+  }
+}
+
+// ─── Provider ───────────────────────────────────────────────────────────────
+final logServiceProvider = Provider<LogService>((ref) {
+  return LogService();
+});

@@ -8,6 +8,8 @@ import '../ui/sales/sales_screen.dart';
 import '../ui/stock/stock_screen.dart';
 import '../ui/parties/parties_screen.dart';
 import '../ui/purchase/purchase_screen.dart';
+import '../ui/pricelist/pricelist_screen.dart';
+import '../ui/common/log_viewer_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -50,6 +52,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/purchase',
         builder: (context, state) => const PurchaseScreen(),
+      ),
+      GoRoute(
+        path: '/pricelist',
+        builder: (context, state) => const PricelistScreen(),
+      ),
+      GoRoute(
+        path: '/logs',
+        builder: (context, state) => const LogViewerScreen(),
       ),
     ],
   );

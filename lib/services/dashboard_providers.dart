@@ -54,3 +54,54 @@ final dashboardMetricsProvider = FutureProvider<Map<String, dynamic>>((ref) asyn
     'trendingMaxQty': maxVolume,
   };
 });
+
+final dashboardDetailProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, type) async {
+  final activeShop = ref.watch(activeShopProvider);
+  if (activeShop == null) return [];
+  
+  final client = ref.watch(supabaseClientProvider);
+  final shopId = activeShop.id;
+
+  switch (type) {
+    case 'today_sales':
+      final today = DateTime.now().copyWith(hour: 0, minute: 0, second: 0).toUtc().toIso8601String();
+      final res = await client
+          .from('sales_entries')
+          .select('quantity, created_at, parties!inner(partyname), products_design!inner(design_no)')
+          .eq('shop_id', shopId)
+          .gte('created_at', today)
+          .order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(res);
+    
+    case 'low_stock':
+      final res = await client
+          .from('stock')
+          .select('quantity, locations!inner(name), products_design!inner(design_no)')
+          .eq('shop_id', shopId)
+          .lt('quantity', 3)
+          .order('quantity', ascending: true);
+      return List<Map<String, dynamic>>.from(res);
+
+    case 'trending':
+      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30)).toUtc().toIso8601String();
+      final res = await client
+          .from('sales_entries')
+          .select('quantity, products_design!inner(design_no)')
+          .eq('shop_id', shopId)
+          .gte('created_at', thirtyDaysAgo);
+      
+      final stats = <String, int>{};
+      for (final item in res) {
+        final designNo = (item['products_design'] as Map)['design_no'] as String;
+        final qty = item['quantity'] as int;
+        stats[designNo] = (stats[designNo] ?? 0) + qty;
+      }
+      
+      final list = stats.entries.map((e) => {'design_no': e.key, 'quantity': e.value}).toList();
+      list.sort((a, b) => (b['quantity'] as int).compareTo(a['quantity'] as int));
+      return list;
+    
+    default:
+      return [];
+  }
+});

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/log_service.dart';
+import '../../utils/error_translator.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,22 +18,26 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
-  Future<void> _signIn() async {
+  Future<void> _signIn(BuildContext context) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
     });
 
+    // Access log service from the ProviderScope
+    final container = ProviderScope.containerOf(context);
+    final log = container.read(logServiceProvider);
+    final username = _usernameController.text.trim();
+
     try {
-      // Internally treating username as an email by appending a domain
-      final username = _usernameController.text.trim();
       final internalEmail = '$username@shop.com';
 
       await Supabase.instance.client.auth.signInWithPassword(
         email: internalEmail,
         password: _passwordController.text.trim(),
       );
+      log.success('Auth', 'User "$username" signed in successfully');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -43,15 +50,17 @@ class _LoginScreenState extends State<LoginScreen> {
         context.go('/');
       }
     } on AuthException catch (e) {
+      log.error('Auth', 'Sign-in failed for "$username"', e.message);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+          SnackBar(content: Text(ErrorTranslator.translate(e)), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
+      log.error('Auth', 'Unexpected sign-in error for "$username"', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unexpected error occurred'), backgroundColor: Colors.red),
+          SnackBar(content: Text(ErrorTranslator.translate(e)), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -117,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           prefixIcon: Icon(Icons.lock),
                         ),
                         obscureText: true,
-                        onFieldSubmitted: (_) => _signIn(),
+                        onFieldSubmitted: (_) => _signIn(context),
                         validator: (value) =>
                             value == null || value.isEmpty ? 'Required' : null,
                       ),
@@ -126,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _signIn,
+                          onPressed: _isLoading ? null : () => _signIn(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF0F4C81),
                             foregroundColor: Colors.white,

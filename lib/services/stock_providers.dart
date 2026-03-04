@@ -34,65 +34,12 @@ class StockRepository {
     required int locationId,
     required int quantity,
   }) async {
-    // 1. Get or create design ID (unique constraint is on design_no per shop)
-    int designId;
-    final designResponse = await _client
-        .from('products_design')
-        .select('id')
-        .eq('shop_id', shopId)
-        .eq('design_no', designNo)
-        .maybeSingle();
-
-    if (designResponse != null) {
-      designId = designResponse['id'] as int;
-    } else {
-      final insertResponse = await _client.from('products_design').insert({
-        'shop_id': shopId,
-        'design_no': designNo,
-        'product_head_id': productHeadId,
-        'time_added': DateTime.now().toIso8601String(),
-      }).select('id').single();
-      designId = insertResponse['id'] as int;
-    }
-
-    // 2. Check if stock record already exists for this design, location, and shop
-    final existingRecords = await _client
-        .from('stock')
-        .select()
-        .eq('shop_id', shopId)
-        .eq('design_id', designId)
-        .eq('location_id', locationId)
-        .maybeSingle();
-
-    if (existingRecords != null) {
-      // Update existing record by incrementing quantity
-      final currentQty = existingRecords['quantity'] as int;
-      await _client
-          .from('stock')
-          .update({
-            'quantity': currentQty + quantity, 
-            'modified_at': DateTime.now().toIso8601String()
-          })
-          .eq('id', existingRecords['id']);
-    } else {
-      // Insert new record
-      await _client.from('stock').insert({
-        'shop_id': shopId,
-        'design_id': designId,
-        'location_id': locationId,
-        'quantity': quantity,
-        'time_added': DateTime.now().toIso8601String(),
-        'modified_at': DateTime.now().toIso8601String(),
-      });
-    }
-
-    // 3. Log the transaction as 'new'
-    await _client.from('stock_transactions').insert({
-      'shop_id': shopId,
-      'design_id': designId,
-      'location_id': locationId,
-      'quantity': quantity,
-      'transaction_type': 'new',
+    await _client.rpc('add_stock_v2', params: {
+      'p_shop_id': shopId,
+      'p_design_no': designNo,
+      'p_product_head_id': productHeadId,
+      'p_location_id': locationId,
+      'p_quantity': quantity,
     });
   }
 
@@ -118,79 +65,13 @@ class StockRepository {
     required int toLocationId,
     required int quantity,
   }) async {
-    if (fromLocationId == toLocationId) throw Exception('Cannot transfer to the same location');
-
-    // 1. Check source stock
-    final sourceStock = await _client
-        .from('stock')
-        .select()
-        .eq('shop_id', shopId)
-        .eq('design_id', designId)
-        .eq('location_id', fromLocationId)
-        .single();
-    
-    final currentSourceQty = sourceStock['quantity'] as int;
-    if (currentSourceQty < quantity) {
-      throw Exception('Insufficient stock in source location.');
-    }
-
-    // 2. Decrement source stock
-    await _client.from('stock').update({
-      'quantity': currentSourceQty - quantity,
-      'modified_at': DateTime.now().toIso8601String(),
-    }).eq('id', sourceStock['id']);
-
-    // 3. Increment or insert destination stock
-    final targetStock = await _client
-        .from('stock')
-        .select()
-        .eq('shop_id', shopId)
-        .eq('design_id', designId)
-        .eq('location_id', toLocationId)
-        .maybeSingle();
-
-    if (targetStock != null) {
-      await _client.from('stock').update({
-        'quantity': (targetStock['quantity'] as int) + quantity,
-        'modified_at': DateTime.now().toIso8601String(),
-      }).eq('id', targetStock['id']);
-    } else {
-      await _client.from('stock').insert({
-        'shop_id': shopId,
-        'design_id': designId,
-        'location_id': toLocationId,
-        'quantity': quantity,
-        'time_added': DateTime.now().toIso8601String(),
-        'modified_at': DateTime.now().toIso8601String(),
-      });
-    }
-
-    // 4. Log the transfer record
-    await _client.from('stock_transfers').insert({
-      'shop_id': shopId,
-      'design_id': designId,
-      'from_location_id': fromLocationId,
-      'to_location_id': toLocationId,
-      'quantity': quantity,
+    await _client.rpc('transfer_stock_v2', params: {
+      'p_shop_id': shopId,
+      'p_design_id': designId,
+      'p_from_location_id': fromLocationId,
+      'p_to_location_id': toLocationId,
+      'p_quantity': quantity,
     });
-
-    // 5. Log both transactions into stock_transactions (Out & In)
-    await _client.from('stock_transactions').insert([
-      {
-        'shop_id': shopId,
-        'design_id': designId,
-        'location_id': fromLocationId,
-        'quantity': -quantity, // Deducted
-        'transaction_type': 'transfer',
-      },
-      {
-        'shop_id': shopId,
-        'design_id': designId,
-        'location_id': toLocationId,
-        'quantity': quantity, // Added
-        'transaction_type': 'transfer',
-      }
-    ]);
   }
 }
 
@@ -213,7 +94,24 @@ final shopStockProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async
         .gt('quantity', 0)                          // only show items with stock
         .order('quantity', ascending: false);        // highest stock first
         
-  return List<Map<String, dynamic>>.from(response);
+  final data = List<Map<String, dynamic>>.from(response);
+  for (var r in data) {
+    // Robustly get joined data which can be Map or List
+    Map<String, dynamic>? getData(dynamic d) {
+      if (d == null) return null;
+      if (d is List) return d.isEmpty ? null : d.first as Map<String, dynamic>;
+      if (d is Map) return d as Map<String, dynamic>;
+      return null;
+    }
+
+    final pd = getData(r['products_design']);
+    final loc = getData(r['locations']);
+    
+    final d = (pd?['design_no'] as String? ?? '').toLowerCase();
+    final l = (loc?['name'] as String? ?? '').toLowerCase();
+    r['search_key'] = '$d $l';
+  }
+  return data;
 });
 
 final locationsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
@@ -240,4 +138,13 @@ final designsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
       .order('design_no');
   
   return List<Map<String, dynamic>>.from(response);
+});
+
+final sortedDesignsProvider = Provider<AsyncValue<List<Map<String, dynamic>>>>((ref) {
+  final designsAsync = ref.watch(designsProvider);
+  return designsAsync.whenData((list) {
+    final sorted = List<Map<String, dynamic>>.from(list);
+    sorted.sort((a, b) => (a['design_no'] as String).toUpperCase().compareTo((b['design_no'] as String).toUpperCase()));
+    return sorted;
+  });
 });

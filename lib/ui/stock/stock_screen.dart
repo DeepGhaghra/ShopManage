@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/stock_providers.dart';
 import '../../services/core_providers.dart';
 import '../../services/product_providers.dart';
+import '../../services/log_service.dart';
 import '../../models/product_head.dart';
 import '../../theme/app_theme.dart';
+import '../common/error_view.dart';
+import '../common/empty_state_view.dart';
 
 class StockScreen extends ConsumerStatefulWidget {
   const StockScreen({super.key});
@@ -47,251 +50,216 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     final shopName = activeShop?.shopName ?? '';
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Stock View'),
+            const Text('Stock View', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
             if (shopName.isNotEmpty)
-              Row(
-                children: [
-                  const Icon(Icons.storefront_rounded, size: 14, color: AppColors.accent),
-                  const SizedBox(width: 4),
-                  Text(
-                    shopName,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.accent,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
+              Text(
+                shopName,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent, letterSpacing: 0.5),
               ),
           ],
         ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
         actions: [
           _buildAppBarAction(Icons.add_shopping_cart_rounded, 'Add Stock', () => _showAddStockDialog(context, ref), AppColors.primary),
           const SizedBox(width: 8),
           _buildAppBarAction(Icons.compare_arrows_rounded, 'Transfer Stock', () => _showTransferStockDialog(context, ref), AppColors.primaryDim),
         ],
       ),
-      body: stockAsync.when(
-        data: (stockList) {
-          if (stockList.isEmpty) {
-            return const Center(child: Text('No stock data available.'));
-          }
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: stockAsync.when(
+            data: (stockList) {
+              final filteredList = _filterStock(stockList);
 
-          final filteredList = _filterStock(stockList);
-
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Card(
-              elevation: 2,
-              shadowColor: Colors.black.withValues(alpha: 0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200),
-              ),
-              child: Column(
-                children: [
-                  // Search & Filter Section
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    ),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: _searchController,
-                          onChanged: (val) => setState(() => _searchQuery = val),
-                          decoration: InputDecoration(
-                            hintText: _filterMode == 'design' ? 'Search by Design Number...' : 'Search by Location...',
-                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                            prefixIcon: Icon(Icons.search_rounded, size: 20, color: Colors.grey.shade500),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: Icon(Icons.clear_rounded, size: 18, color: Colors.grey.shade500),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() => _searchQuery = '');
-                                    },
-                                  )
-                                : null,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 1.5)),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            isDense: true,
+              return RefreshIndicator(
+                onRefresh: () async => ref.invalidate(shopStockProvider),
+                color: AppColors.primary,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  slivers: [
+                    // ── Search & Filter Panel ──────────────────────────────────
+                    SliverToBoxAdapter(
+                      child: RepaintBoundary(
+                        child: Container(
+                          margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                          ),
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: _searchController,
+                                onChanged: (val) => setState(() => _searchQuery = val),
+                                decoration: InputDecoration(
+                                  hintText: _filterMode == 'design' ? 'Search design...' : 'Search location...',
+                                  prefixIcon: const Icon(Icons.search, size: 20),
+                                  suffixIcon: _searchQuery.isNotEmpty 
+                                    ? IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () {
+                                        _searchController.clear();
+                                        setState(() => _searchQuery = '');
+                                      })
+                                    : null,
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  _FilterChip(
+                                    label: 'Design NO',
+                                    isSelected: _filterMode == 'design',
+                                    onTap: () => setState(() => _filterMode = 'design'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _FilterChip(
+                                    label: 'Location',
+                                    isSelected: _filterMode == 'location',
+                                    onTap: () => setState(() => _filterMode = 'location'),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '${filteredList.length} Items',
+                                    style: TextStyle(color: Colors.blueGrey.shade300, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            ChoiceChip(
-                              label: const Text('Design No'),
-                              avatar: Icon(Icons.tag_rounded, size: 16, color: _filterMode == 'design' ? Colors.white : Colors.blueGrey),
-                              selected: _filterMode == 'design',
-                              selectedColor: Theme.of(context).primaryColor,
-                              labelStyle: TextStyle(
-                                color: _filterMode == 'design' ? Colors.white : Colors.blueGrey.shade700,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                              onSelected: (_) {
-                                _searchController.clear();
-                                setState(() { _filterMode = 'design'; _searchQuery = ''; });
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            ChoiceChip(
-                              label: const Text('Location'),
-                              avatar: Icon(Icons.location_on_rounded, size: 16, color: _filterMode == 'location' ? Colors.white : Colors.blueGrey),
-                              selected: _filterMode == 'location',
-                              selectedColor: Theme.of(context).primaryColor,
-                              labelStyle: TextStyle(
-                                color: _filterMode == 'location' ? Colors.white : Colors.blueGrey.shade700,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                              onSelected: (_) {
-                                _searchController.clear();
-                                setState(() { _filterMode = 'location'; _searchQuery = ''; });
-                              },
-                            ),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Text(
-                                '${filteredList.length} items',
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Header Row
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.06),
-                      border: Border(
-                        top: BorderSide(color: Colors.grey.shade200),
-                        bottom: BorderSide(color: Colors.grey.shade200),
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(flex: 3, child: Text('Design No', style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).primaryColor, fontSize: 12, letterSpacing: 0.5))),
-                        Expanded(flex: 3, child: Text('Location', style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).primaryColor, fontSize: 12, letterSpacing: 0.5))),
-                        Expanded(flex: 2, child: Text('Qty', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).primaryColor, fontSize: 12, letterSpacing: 0.5))),
-                      ],
+
+                    // ── Table Header ───────────────────────────────────────────
+                    SliverStickyHeader(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF475569),
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
+                            Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
+                            Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.right, style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  // Data Rows
-                  Expanded(
-                    child: filteredList.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade300),
-                                const SizedBox(height: 12),
-                                Text('No results found', style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
-                                const SizedBox(height: 4),
-                                Text('Try a different search term', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
-                              ],
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: filteredList.length,
-                            separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey.shade100, thickness: 1),
-                            itemBuilder: (context, index) {
+
+                    // ── Data Rows ──────────────────────────────────────────────
+                    if (filteredList.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: EmptyStateView(
+                          title: 'No Matching Stock',
+                          message: _searchQuery.isEmpty ? 'There is no stock available in this warehouse.' : 'Try adjusting your search filters.',
+                          icon: Icons.inventory_2_outlined,
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
                               final row = filteredList[index];
                               final design = row['products_design'] ?? {};
                               final location = row['locations'] ?? {};
-                              final qty = row['quantity'] as int;
-                              final isLowStock = qty < 10;
+                              final qty = (row['quantity'] as num).toInt();
+                              final isLow = qty < 10;
+                              final isLast = index == filteredList.length - 1;
 
-                              return Container(
-                                color: index.isEven ? Colors.transparent : Colors.grey.shade50.withValues(alpha: 0.5),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 3,
-                                      child: Text(
-                                        design['design_no']?.toString() ?? 'N/A',
-                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                              return RepaintBoundary(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(16)) : null,
+                                    border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 3,
+                                        child: Text(
+                                          design['design_no']?.toString() ?? '-',
+                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
-                                    ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.location_on_rounded, size: 14, color: Colors.grey.shade400),
-                                          const SizedBox(width: 4),
-                                          Flexible(
-                                            child: Text(
-                                              location['name']?.toString() ?? 'N/A',
-                                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                                              overflow: TextOverflow.ellipsis,
+                                      Expanded(
+                                        flex: 3,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade400),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                location['name']?.toString() ?? 'Warehouse',
+                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w500),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Container(
-                                        alignment: Alignment.centerRight,
+                                      Expanded(
+                                        flex: 2,
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: isLowStock ? Colors.red.shade50 : Colors.green.shade50,
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(color: isLowStock ? Colors.red.shade200 : Colors.green.shade200),
-                                          ),
-                                          child: Text(
-                                            qty.toString(),
-                                            style: TextStyle(
-                                              color: isLowStock ? Colors.red.shade700 : Colors.green.shade700,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
+                                          alignment: Alignment.centerRight,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: isLow ? Colors.orange.shade50 : Colors.green.shade50,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              qty.toString(),
+                                              style: TextStyle(
+                                                color: isLow ? Colors.orange.shade700 : Colors.green.shade700,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 13,
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               );
                             },
+                            childCount: filteredList.length,
                           ),
-                  ),
-                ],
-              ),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => ErrorView(
+              error: err,
+              onRetry: () => ref.invalidate(shopStockProvider),
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+          ),
+        ),
       ),
     );
   }
@@ -300,15 +268,13 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: IconButton(
         icon: Icon(icon, color: color, size: 20),
         tooltip: tooltip,
         onPressed: onTap,
-        splashRadius: 24,
       ),
     );
   }
@@ -328,6 +294,68 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       builder: (context) => const _TransferStockDialog(),
     );
   }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FilterChip({required this.label, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.shade200),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade600,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SliverStickyHeader extends StatelessWidget {
+  final Widget child;
+  const SliverStickyHeader({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverPersistentHeader(
+      pinned: true,
+      delegate: _SliverDelegate(child: child),
+    );
+  }
+}
+
+class _SliverDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  _SliverDelegate({required this.child});
+
+  @override
+  double get minExtent => 38;
+  @override
+  double get maxExtent => 38;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant _SliverDelegate oldDelegate) => false;
 }
 
 // ─── Add Stock Dialog ─────────────────────────────────────────────
@@ -695,6 +723,7 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
         quantity: _quantity,
       );
       if (mounted) {
+        ref.read(logServiceProvider).success('Stock', 'Added ${_quantity} units of "${_designController.text.trim()}" to "${_selectedLocationName ?? 'location'}"');
         ref.invalidate(shopStockProvider);
         nav.pop();
         scaffoldMsg.showSnackBar(
@@ -706,7 +735,8 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      ref.read(logServiceProvider).error('Stock', 'Failed to add stock "${_designController.text.trim()}"', e, stack);
       if (mounted) {
         scaffoldMsg.showSnackBar(
           SnackBar(
@@ -1095,6 +1125,7 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
       );
       
       if (mounted) {
+        ref.read(logServiceProvider).success('Stock', 'Transferred ${_quantity} units of design #${_selectedDesign!['design_no']}');
         ref.invalidate(shopStockProvider);
         nav.pop();
         scaffoldMsg.showSnackBar(
@@ -1106,7 +1137,8 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      ref.read(logServiceProvider).error('Stock', 'Stock transfer failed for design #${_selectedDesign?['design_no'] ?? 'unknown'}', e, stack);
       if (mounted) {
         scaffoldMsg.showSnackBar(
           SnackBar(

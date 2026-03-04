@@ -4,6 +4,8 @@ import '../../services/party_providers.dart';
 import '../../services/core_providers.dart';
 import '../../models/party.dart';
 import '../../theme/app_theme.dart';
+import '../common/error_view.dart';
+import '../common/empty_state_view.dart';
 
 class PartiesScreen extends ConsumerStatefulWidget {
   const PartiesScreen({super.key});
@@ -26,34 +28,27 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
   @override
   Widget build(BuildContext context) {
     final partiesAsync = ref.watch(partiesProvider);
+    final activeShop = ref.watch(activeShopProvider);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Manage Parties'),
-            if (ref.watch(activeShopProvider) != null)
-              Row(
-                children: [
-                  const Icon(Icons.storefront_rounded, size: 14, color: AppColors.accent),
-                  const SizedBox(width: 4),
-                  Text(
-                    ref.watch(activeShopProvider)!.shopName,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.accent,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
+            const Text('Manage Parties', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+            if (activeShop != null)
+              Text(
+                activeShop.shopName,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent, letterSpacing: 0.5),
               ),
           ],
         ),
         actions: [
           IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            icon: Icon(_isSearching ? Icons.close : Icons.search, color: AppColors.primary),
             onPressed: () {
               setState(() {
                 _isSearching = !_isSearching;
@@ -63,94 +58,128 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
                 }
               });
             },
-            tooltip: 'Search Parties',
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showAddEditPartyDialog(context, ref),
-            tooltip: 'Add Party',
           ),
         ],
       ),
-      body: partiesAsync.when(
-        data: (parties) {
-          final filteredParties = parties.where((party) {
-            final query = _searchQuery.toLowerCase();
-            final matchesName = party.partyName.toLowerCase().contains(query);
-            final matchesMobile = party.mobile?.contains(query) ?? false;
-            return matchesName || matchesMobile;
-          }).toList();
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddEditPartyDialog(context, ref),
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.person_add_rounded, color: Colors.white),
+        label: const Text('Add Party', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: partiesAsync.when(
+            data: (parties) {
+              final filteredParties = parties.where((party) {
+                final query = _searchQuery.toLowerCase();
+                return party.partyName.toLowerCase().contains(query) || 
+                       (party.mobile?.contains(query) ?? false);
+              }).toList();
 
-          return Column(
-            children: [
-              if (_isSearching)
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search by Name or Mobile...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+              return RefreshIndicator(
+                onRefresh: () async => ref.invalidate(partiesProvider),
+                color: AppColors.primary,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  slivers: [
+                    if (_isSearching)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          child: TextField(
+                            controller: _searchController,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: 'Search by Name or Mobile...',
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            ),
+                            onChanged: (val) => setState(() => _searchQuery = val),
+                          ),
+                        ),
                       ),
-                      filled: true,
-                      fillColor: Theme.of(context).cardColor,
-                    ),
-                    autofocus: true,
-                    onChanged: (val) => setState(() => _searchQuery = val),
-                  ),
-                ),
-              Expanded(
-                child: filteredParties.isEmpty
-                    ? Center(
-                        child: Text(
-                          _searchQuery.isEmpty ? 'No parties found. Add one!' : 'No matching parties found.',
+                    
+                    if (filteredParties.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: EmptyStateView(
+                          title: _searchQuery.isEmpty ? 'No Parties Yet' : 'No matches found',
+                          message: _searchQuery.isEmpty ? 'Tap the + button below to add your first party.' : 'Try adjusting your search terms.',
+                          icon: Icons.people_outline_rounded,
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: filteredParties.length,
-                        itemBuilder: (context, index) {
-                          final party = filteredParties[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person)),
-                  title: Text(party.partyName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: ((party.city?.isNotEmpty ?? false) || (party.mobile?.isNotEmpty ?? false))
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Wrap(
-                            spacing: 12,
-                            runSpacing: 4,
-                            children: [
-                              if (party.city?.isNotEmpty ?? false)
-                                Text('City: ${party.city}', style: const TextStyle(fontSize: 12)),
-                              if (party.mobile?.isNotEmpty ?? false)
-                                Text('Mobile: ${party.mobile}', style: const TextStyle(fontSize: 12)),
-                            ],
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final party = filteredParties[index];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: RepaintBoundary(
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                                  leading: CircleAvatar(
+                                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                                    child: Text(
+                                      party.partyName[0].toUpperCase(),
+                                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    party.partyName,
+                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Row(
+                                      children: [
+                                        if (party.city != null) ...[
+                                          const Icon(Icons.location_on_outlined, size: 12, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Flexible(child: Text(party.city!, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))),
+                                          const SizedBox(width: 12),
+                                        ],
+                                        if (party.mobile != null) ...[
+                                          const Icon(Icons.phone_outlined, size: 12, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Flexible(child: Text(party.mobile!, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 26),
+                                    onPressed: () => _showAddEditPartyDialog(context, ref, party: party),
+                                  ),
+                                ),
+                              ));
+                            },
+                            childCount: filteredParties.length,
                           ),
-                        )
-                      : null,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: AppColors.primary), 
-                        onPressed: () => _showAddEditPartyDialog(context, ref, party: party),
+                        ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
               );
             },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => ErrorView(
+              error: err,
+              onRetry: () => ref.invalidate(partiesProvider),
+            ),
           ),
         ),
-      ],
-    );
-  },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
   }
@@ -169,7 +198,11 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
       return StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: Text(party == null ? 'Add Party' : 'Edit Party'),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Text(
+              party == null ? 'New Party' : 'Edit Party',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
             content: SingleChildScrollView(
               child: Form(
                 key: formKey,
@@ -178,27 +211,35 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                   children: [
                     TextFormField(
                       controller: nameController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Party Name *',
-                        border: OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.person_outline),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
                       ),
-                      autofocus: true,
                       validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: cityController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'City Name',
-                        border: OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.location_city_outlined),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: mobileController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Mobile Number',
-                        border: OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.phone_android_outlined),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
                         counterText: '',
                       ),
                       keyboardType: TextInputType.phone,
@@ -206,20 +247,21 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                       validator: (val) {
                         if (val != null && val.trim().isNotEmpty) {
                           if (!RegExp(r'^[0-9]{10}$').hasMatch(val.trim())) {
-                            return 'Enter a valid mobile no';
+                            return 'Enter 10 digit number';
                           }
                         }
-                        return null; // Optional field
+                        return null;
                       },
                     ),
                   ],
                 ),
               ),
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
               TextButton(
                 onPressed: isSaving ? null : () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
               ),
               ElevatedButton(
                 onPressed: isSaving
@@ -244,44 +286,25 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: const Text('⚠️ A party with this name already exists'),
-                                  backgroundColor: Colors.orange.shade700,
+                                  content: const Text('⚠️ Name already exists'),
+                                  backgroundColor: Colors.orange.shade800,
                                   behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
                               );
                             }
                             return;
                           }
 
-                          if (enteredMobile.isNotEmpty) {
-                            final mobileExists = currentParties.any((p) => 
-                                p.id != party?.id && p.mobile == enteredMobile);
-                            if (mobileExists) {
-                              setState(() => isSaving = false);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('⚠️ A party with this mobile number already exists'),
-                                    backgroundColor: Colors.orange.shade700,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                );
-                              }
-                              return;
-                            }
-                          }
-
                           try {
                             final repo = ref.read(partyRepositoryProvider);
                             if (party == null) {
                               await repo.addParty(Party(
-                                id: 0, // Ignored by Supabase
+                                id: 0,
                                 partyName: nameController.text.trim(),
                                 city: cityController.text.trim().isEmpty ? null : cityController.text.trim(),
                                 mobile: mobileController.text.trim().isEmpty ? null : mobileController.text.trim(),
-                                timeAdded: DateTime.now(), // Ignored by Supabase
+                                timeAdded: DateTime.now(),
                                 shopId: activeShop.id,
                               ));
                             } else {
@@ -291,7 +314,7 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                                 city: cityController.text.trim().isEmpty ? null : cityController.text.trim(),
                                 mobile: mobileController.text.trim().isEmpty ? null : mobileController.text.trim(),
                                 timeAdded: party.timeAdded,
-                                shopId: party.shopId, // Keep original shop ID
+                                shopId: party.shopId,
                               ));
                             }
                             
@@ -299,33 +322,31 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(party == null ? '✅ Party added successfully!' : '✅ Party updated successfully!'),
-                                  backgroundColor: Colors.green.shade700,
+                                  content: Text(party == null ? '✅ Party added!' : '✅ Party updated!'),
+                                  backgroundColor: AppColors.success,
                                   behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
                               );
                             }
-                            // Refresh list to show new data
                             ref.invalidate(partiesProvider);
                           } catch (e) {
                             setState(() => isSaving = false);
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('❌ Error: $e'),
-                                  backgroundColor: Colors.red.shade700,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              );
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                             }
                           }
                         }
                       },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
                 child: isSaving
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Save'),
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Save Party', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           );

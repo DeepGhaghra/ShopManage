@@ -416,7 +416,7 @@ class _ProductPriceCard extends StatelessWidget {
                       brandName.toUpperCase(), 
                       style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.3)
                     ),
-                  Text(productName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
+                  Text(productName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
                   Container(
                     margin: const EdgeInsets.only(top: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -447,14 +447,14 @@ class _ProductPriceCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             SizedBox(
-              width: 95,
+              width: 115,
               child: TextFormField(
                 controller: controller,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.right,
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 17,
+                  fontSize: 15,
                   color: isModified ? AppColors.primary : Colors.blueGrey.shade900,
                 ),
                 onFieldSubmitted: (_) => onSave(),
@@ -464,7 +464,7 @@ class _ProductPriceCard extends StatelessWidget {
                   isDense: true,
                   filled: true,
                   fillColor: isModified ? AppColors.primary.withAlpha(5) : const Color(0xFFF8FAFC),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   suffixIcon: IconButton(
                     padding: EdgeInsets.zero,

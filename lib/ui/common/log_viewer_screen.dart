@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,9 +18,25 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  Timer? _refreshTimer;
+  int _lastVersion = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    // Poll for new logs every 2 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      final logService = ref.read(logServiceProvider);
+      if (logService.version != _lastVersion) {
+        _lastVersion = logService.version;
+        if (mounted) setState(() {});
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();

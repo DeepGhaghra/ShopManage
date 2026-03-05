@@ -75,6 +75,9 @@ class PrintService {
             constraints: const pw.BoxConstraints(minHeight: 20),
             padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 3),
             alignment: align,
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.4)),
+            ),
             child: pw.Text(text, style: cellStyle(f: f ?? (isBold ? fontBold : font), size: dataSize)),
           );
         }

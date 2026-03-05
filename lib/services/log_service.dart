@@ -60,6 +60,10 @@ class LogService {
   final List<LogEntry> _logs = [];
   File? _logFile;
   bool _initialized = false;
+  int _version = 0; // Incremented on every log to allow UI reactivity
+
+  /// The current version stamp. UI can poll or watch this to know logs changed.
+  int get version => _version;
 
   bool get _shouldPrint => kDebugMode && dotenv.env['APP_DEBUG'] == 'true';
 
@@ -133,6 +137,8 @@ class LogService {
     if (_shouldPrint) {
       debugPrint(entry.toString());
     }
+
+    _version++;
   }
 
   // ── Public API ───────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
+import 'app_drawer.dart';
 
 class LogViewerScreen extends ConsumerStatefulWidget {
   const LogViewerScreen({super.key});
@@ -72,15 +73,23 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: Column(
-          children: [
-            const Text('Activity Log', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-            Text(
-              '${logService.totalCount} entries • ${logService.errorCount} errors',
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.accent),
-            ),
-          ],
-        ),
+        title: Builder(builder: (context) {
+          final isMobile = MediaQuery.of(context).size.width < 600;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Activity Log', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              Text(
+                '${logService.totalCount} entries • ${logService.errorCount} errors',
+                style: TextStyle(
+                  fontSize: isMobile ? 9 : 11, 
+                  fontWeight: FontWeight.w600, 
+                  color: AppColors.accent
+                ),
+              ),
+            ],
+          );
+        }),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppColors.textPrimary),
@@ -126,6 +135,7 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
           ),
         ],
       ),
+      drawer: const AppDrawer(currentRoute: '/logs'),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),

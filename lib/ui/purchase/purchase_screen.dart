@@ -14,6 +14,7 @@ import '../../services/core_providers.dart';
 import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/loading_overlay.dart';
+import '../common/app_drawer.dart';
 import '../common/confirmation_dialog.dart';
 import '../../utils/error_translator.dart';
 
@@ -23,6 +24,7 @@ class _ManualLine {
   int? locationId;
   String locationName = '';
   int quantity = 1;
+  final TextEditingController qtyController = TextEditingController(); // Initially empty for better UX
 
   String get designNo => (designMap?['design_no'] as String?) ?? '';
   int get designId    => (designMap?['id']        as int?)    ?? 0;
@@ -331,25 +333,30 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Purchase Entry', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-            if (ref.watch(activeShopProvider) != null)
-              Row(children: [
-                const Icon(Icons.storefront_rounded, size: 13, color: AppColors.accent),
-                const SizedBox(width: 4),
-                Text(ref.watch(activeShopProvider)!.shopName,
-                    style: const TextStyle(fontSize: 12, color: AppColors.accent, fontWeight: FontWeight.w600)),
-              ]),
-          ],
-        ),
+        title: Builder(builder: (context) {
+          final isMobile = MediaQuery.of(context).size.width < 600;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Purchase Entry', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: isMobile ? 18 : 20)),
+              if (ref.watch(activeShopProvider) != null)
+                Row(children: [
+                  const Icon(Icons.storefront_rounded, size: 13, color: AppColors.accent),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(ref.watch(activeShopProvider)!.shopName,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: isMobile ? 10 : 12, color: AppColors.accent, fontWeight: FontWeight.w600)),
+                  ),
+                ]),
+            ],
+          );
+        }),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,
@@ -361,6 +368,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
           ],
         ),
       ),
+      drawer: const AppDrawer(currentRoute: '/purchase'),
       body: Stack(
         children: [
           Center(
@@ -427,88 +435,102 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
           constraints: const BoxConstraints(maxWidth: 800),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Row(
-              children: [
-          // Party autocomplete
-          Expanded(
-            flex: 3,
-            child: partiesAsync.when(
-              data: (parties) => Autocomplete<Party>(
-                initialValue: TextEditingValue(text: _selectedParty?.partyName ?? ''),
-                displayStringForOption: (p) => p.partyName,
-                optionsBuilder: (tv) {
-                  if (tv.text.isEmpty) return parties;
-                  return parties.where((p) => p.partyName.toLowerCase().contains(tv.text.toLowerCase()));
-                },
-                onSelected: (p) => setState(() => _selectedParty = p),
-                fieldViewBuilder: (ctx, ctrl, fn, sub) => TextFormField(
-                  controller: ctrl, focusNode: fn,
-                  decoration: InputDecoration(
-                    labelText: 'Search Party',
-                    isDense: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                    filled: true, fillColor: AppColors.scaffoldBg,
-                    prefixIcon: const Icon(Icons.business, size: 18, color: AppColors.accent),
+            child: Builder(builder: (context) {
+              final isMobile = MediaQuery.of(context).size.width < 600;
+              
+              final partySearch = partiesAsync.when(
+                data: (parties) => Autocomplete<Party>(
+                  initialValue: TextEditingValue(text: _selectedParty?.partyName ?? ''),
+                  displayStringForOption: (p) => p.partyName,
+                  optionsBuilder: (tv) {
+                    if (tv.text.isEmpty) return parties;
+                    return parties.where((p) => p.partyName.toLowerCase().contains(tv.text.toLowerCase()));
+                  },
+                  onSelected: (p) => setState(() => _selectedParty = p),
+                  fieldViewBuilder: (ctx, ctrl, fn, sub) => TextFormField(
+                    controller: ctrl, focusNode: fn,
+                    decoration: InputDecoration(
+                      labelText: 'Search Party',
+                      isDense: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+                      filled: true, fillColor: AppColors.scaffoldBg,
+                      prefixIcon: const Icon(Icons.business, size: 18, color: AppColors.accent),
+                    ),
+                    onFieldSubmitted: (_) => sub(),
                   ),
-                  onFieldSubmitted: (_) => sub(),
-                ),
-                optionsViewBuilder: (ctx, onSel, options) => Align(
-                  alignment: Alignment.topLeft,
-                  child: Material(
-                    elevation: 8, borderRadius: BorderRadius.circular(12), color: Colors.white,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200, maxWidth: 300),
-                      child: ListView.builder(
-                        padding: EdgeInsets.zero, shrinkWrap: true,
-                        itemCount: options.length,
-                        itemBuilder: (_, i) {
-                          final p = options.elementAt(i);
-                          return ListTile(dense: true,
-                            leading: const Icon(Icons.business, size: 16, color: AppColors.accent),
-                            title: Text(p.partyName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                            subtitle: p.city != null ? Text(p.city!, style: const TextStyle(fontSize: 11)) : null,
-                            onTap: () => onSel(p),
-                          );
-                        },
+                  optionsViewBuilder: (ctx, onSel, options) => Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 8, borderRadius: BorderRadius.circular(12), color: Colors.white,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 200, maxWidth: 350),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero, shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (_, i) {
+                            final p = options.elementAt(i);
+                            return ListTile(dense: true,
+                              leading: const Icon(Icons.business, size: 16, color: AppColors.accent),
+                              title: Text(p.partyName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                              subtitle: p.city != null ? Text(p.city!, style: const TextStyle(fontSize: 11)) : null,
+                              onTap: () => onSel(p),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              loading: () => const LinearProgressIndicator(),
-              error: (e, _) => Text('$e'),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Date picker
-          InkWell(
-            onTap: _pickDate,
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.scaffoldBg,
+                loading: () => const LinearProgressIndicator(),
+                error: (e, _) => Text('$e'),
+              );
+
+              final datePicker = InkWell(
+                onTap: _pickDate,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.scaffoldBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 6),
+                      Text(DateFormat('dd MMM yyyy').format(_selectedDate),
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
+                    ],
+                  ),
+                ),
+              );
+
+              if (isMobile) {
+                return Column(
+                  children: [
+                    partySearch,
+                    const SizedBox(height: 12),
+                    datePicker,
+                  ],
+                );
+              }
+
+              return Row(
                 children: [
-                  const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
-                  const SizedBox(width: 6),
-                  Text(DateFormat('dd MMM yyyy').format(_selectedDate),
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
+                  Expanded(flex: 3, child: partySearch),
+                  const SizedBox(width: 12),
+                  datePicker,
                 ],
-              ),
-            ),
+              );
+            }),
           ),
-        ],
+        ),
       ),
-    ),
-  ),
-),
-);
+    );
 }
 
 // ── Tab 1: Manual Entry ───────────────────────────────────────────────────────
@@ -518,20 +540,23 @@ Widget _buildManualTab(List<Map<String, dynamic>> designs, List<Map<String, dyna
     return Column(
       children: [
         // Column headers
-        Container(
-          color: AppColors.primary.withAlpha(10),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: const Row(
-            children: [
-              Expanded(flex: 4, child: Text('Design No', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent))),
-              SizedBox(width: 8),
-              Expanded(flex: 3, child: Text('Location', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent))),
-              SizedBox(width: 8),
-              SizedBox(width: 72, child: Text('Qty', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent))),
-              SizedBox(width: 40),
-            ],
-          ),
-        ),
+        Builder(builder: (context) {
+          if (MediaQuery.of(context).size.width < 600) return const SizedBox.shrink();
+          return Container(
+            color: AppColors.primary.withAlpha(10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: const Row(
+              children: [
+                Expanded(flex: 4, child: Text('Design No', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent))),
+                SizedBox(width: 8),
+                Expanded(flex: 3, child: Text('Location', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent))),
+                SizedBox(width: 8),
+                SizedBox(width: 72, child: Text('Qty', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent))),
+                SizedBox(width: 40),
+              ],
+            ),
+          );
+        }),
 
         // Rows
         Expanded(
@@ -595,138 +620,178 @@ Widget _buildManualTab(List<Map<String, dynamic>> designs, List<Map<String, dyna
     return RepaintBoundary(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Design autocomplete
-          Expanded(
-            flex: 4,
-            child: Autocomplete<Map<String, dynamic>>(
-              initialValue: TextEditingValue(text: line.designNo),
-              displayStringForOption: (d) => d['design_no'] as String,
-              optionsBuilder: (tv) {
-                if (tv.text.isEmpty) return designs;
-                return designs.where((d) =>
-                    (d['design_no'] as String).toLowerCase().contains(tv.text.toLowerCase()));
-              },
-              onSelected: (d) => setState(() { line.designMap = d; }),
-              fieldViewBuilder: (ctx, ctrl, fn, sub) => TextFormField(
-                controller: ctrl, focusNode: fn,
-                decoration: InputDecoration(
-                  hintText: 'Design No',
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                  filled: true, fillColor: Colors.white,
+      child: Builder(builder: (context) {
+        final isMobile = MediaQuery.of(context).size.width < 600;
+        
+        final designField = Autocomplete<Map<String, dynamic>>(
+          initialValue: TextEditingValue(text: line.designNo),
+          displayStringForOption: (d) => d['design_no'] as String,
+          optionsBuilder: (tv) {
+            if (tv.text.isEmpty) return designs;
+            return designs.where((d) =>
+                (d['design_no'] as String).toLowerCase().contains(tv.text.toLowerCase()));
+          },
+          onSelected: (d) => setState(() { line.designMap = d; }),
+          fieldViewBuilder: (ctx, ctrl, fn, sub) => TextFormField(
+            controller: ctrl, focusNode: fn,
+            decoration: InputDecoration(
+              hintText: 'Design No',
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+              filled: true, fillColor: Colors.white,
+            ),
+            onFieldSubmitted: (_) => sub(),
+          ),
+          optionsViewBuilder: (ctx, onSel, options) => Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 8, borderRadius: BorderRadius.circular(10), color: Colors.white,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: 200, maxWidth: isMobile ? MediaQuery.of(context).size.width * 0.8 : 260),
+                child: ListView.builder(
+                  padding: EdgeInsets.zero, shrinkWrap: true,
+                  itemCount: options.length,
+                  itemBuilder: (_, i) {
+                    final d = options.elementAt(i);
+                    return ListTile(
+                      dense: true,
+                      title: Text(d['design_no'] as String, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      subtitle: Text((d['product_head']?['product_name'] ?? '') as String, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+                      onTap: () => onSel(d),
+                    );
+                  },
                 ),
-                onFieldSubmitted: (_) => sub(),
               ),
-              optionsViewBuilder: (ctx, onSel, options) => Align(
-                alignment: Alignment.topLeft,
-                child: Material(
-                  elevation: 8, borderRadius: BorderRadius.circular(10), color: Colors.white,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 200, maxWidth: 260),
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero, shrinkWrap: true,
-                      itemCount: options.length,
-                      itemBuilder: (_, i) {
-                        final d = options.elementAt(i);
-                        return ListTile(
-                          dense: true,
-                          title: Text(d['design_no'] as String, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                          subtitle: Text((d['product_head']?['product_name'] ?? '') as String, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
-                          onTap: () => onSel(d),
-                        );
-                      },
+            ),
+          ),
+        );
+
+        final locationField = Autocomplete<Map<String, dynamic>>(
+          initialValue: TextEditingValue(text: line.locationName),
+          displayStringForOption: (l) => l['name'] as String,
+          optionsBuilder: (tv) {
+            if (tv.text.isEmpty) return locations;
+            return locations.where((l) =>
+                (l['name'] as String).toLowerCase().contains(tv.text.toLowerCase()));
+          },
+          onSelected: (l) => setState(() {
+            line.locationId  = l['id'] as int;
+            line.locationName = l['name'] as String;
+          }),
+          fieldViewBuilder: (ctx, ctrl, fn, sub) => TextFormField(
+            controller: ctrl, focusNode: fn,
+            decoration: InputDecoration(
+              hintText: 'Location',
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+              filled: true, fillColor: Colors.white,
+            ),
+            onFieldSubmitted: (_) => sub(),
+          ),
+          optionsViewBuilder: (ctx, onSel, options) => Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 8, borderRadius: BorderRadius.circular(10), color: Colors.white,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: 200, maxWidth: isMobile ? MediaQuery.of(context).size.width * 0.8 : 200),
+                child: ListView.builder(
+                  padding: EdgeInsets.zero, shrinkWrap: true,
+                  itemCount: options.length,
+                  itemBuilder: (_, i) {
+                    final l = options.elementAt(i);
+                    return ListTile(
+                      dense: true,
+                      title: Text(l['name'] as String, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      onTap: () => onSel(l),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final qtyField = TextFormField(
+          key: ValueKey('qty_$index'),
+          controller: line.qtyController,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: 'Qty',
+            contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+            filled: true, fillColor: Colors.white,
+          ),
+          onChanged: (v) {
+            if (v.isEmpty) {
+              setState(() { line.quantity = 0; });
+              return;
+            }
+            setState(() { line.quantity = int.tryParse(v) ?? 0; });
+          },
+        );
+
+        if (isMobile) {
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: designField),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _removeManualLine(index),
                     ),
-                  ),
+                  ],
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Location dropdown
-          // Location autocomplete
-          Expanded(
-            flex: 3,
-            child: Autocomplete<Map<String, dynamic>>(
-              initialValue: TextEditingValue(text: line.locationName),
-              displayStringForOption: (l) => l['name'] as String,
-              optionsBuilder: (tv) {
-                if (tv.text.isEmpty) return locations;
-                return locations.where((l) =>
-                    (l['name'] as String).toLowerCase().contains(tv.text.toLowerCase()));
-              },
-              onSelected: (l) => setState(() {
-                line.locationId  = l['id'] as int;
-                line.locationName = l['name'] as String;
-              }),
-              fieldViewBuilder: (ctx, ctrl, fn, sub) => TextFormField(
-                controller: ctrl, focusNode: fn,
-                decoration: InputDecoration(
-                  hintText: 'Location',
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                  filled: true, fillColor: Colors.white,
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(flex: 2, child: locationField),
+                    const SizedBox(width: 8),
+                    Expanded(child: qtyField),
+                  ],
                 ),
-                onFieldSubmitted: (_) => sub(),
-              ),
-              optionsViewBuilder: (ctx, onSel, options) => Align(
-                alignment: Alignment.topLeft,
-                child: Material(
-                  elevation: 8, borderRadius: BorderRadius.circular(10), color: Colors.white,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 200, maxWidth: 200),
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero, shrinkWrap: true,
-                      itemCount: options.length,
-                      itemBuilder: (_, i) {
-                        final l = options.elementAt(i);
-                        return ListTile(
-                          dense: true,
-                          title: Text(l['name'] as String, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                          onTap: () => onSel(l),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(width: 8),
-          // Qty
-          SizedBox(
-            width: 60,
-            child: TextFormField(
-              key: ValueKey('qty_$index'),
-              initialValue: line.quantity.toString(),
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                filled: true, fillColor: Colors.white,
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(flex: 4, child: designField),
+              const SizedBox(width: 8),
+              Expanded(flex: 3, child: locationField),
+              const SizedBox(width: 8),
+              SizedBox(width: 60, child: qtyField),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade300),
+                onPressed: () => _removeManualLine(index),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
-              onChanged: (v) => setState(() { line.quantity = int.tryParse(v) ?? 1; }),
-            ),
+            ],
           ),
-          const SizedBox(width: 4),
-          // Delete
-          IconButton(
-            icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade300),
-            onPressed: () => _removeManualLine(index),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
+        );
+      }),
     ),
   );
 }

@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/error_translator.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
+import '../common/app_drawer.dart';
 
 class PartiesScreen extends ConsumerStatefulWidget {
   const PartiesScreen({super.key});
@@ -36,17 +37,32 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
-        title: Column(
-          children: [
-            const Text('Manage Parties', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-            if (activeShop != null)
+        title: Builder(builder: (context) {
+          final isMobile = MediaQuery.of(context).size.width < 600;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Text(
-                activeShop.shopName,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent, letterSpacing: 0.5),
+                'Manage Parties', 
+                style: TextStyle(
+                  fontWeight: FontWeight.w800, 
+                  color: AppColors.textPrimary,
+                  fontSize: isMobile ? 16 : 20,
+                )
               ),
-          ],
-        ),
+              if (activeShop != null)
+                Text(
+                  activeShop.shopName,
+                  style: TextStyle(
+                    fontSize: isMobile ? 9 : 11, 
+                    fontWeight: FontWeight.bold, 
+                    color: AppColors.accent, 
+                    letterSpacing: 0.5
+                  ),
+                ),
+            ],
+          );
+        }),
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search, color: AppColors.primary),
@@ -62,6 +78,7 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
           ),
         ],
       ),
+      drawer: const AppDrawer(currentRoute: '/parties'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditPartyDialog(context, ref),
         backgroundColor: AppColors.primary,
@@ -143,21 +160,52 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
                                   ),
                                   subtitle: Padding(
                                     padding: const EdgeInsets.only(top: 4),
-                                    child: Row(
-                                      children: [
-                                        if (party.city != null) ...[
+                                    child: Builder(builder: (context) {
+                                      final isMobile = MediaQuery.of(context).size.width < 600;
+                                      
+                                      final cityInfo = party.city != null ? Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
                                           const Icon(Icons.location_on_outlined, size: 12, color: Colors.grey),
                                           const SizedBox(width: 4),
                                           Flexible(child: Text(party.city!, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))),
-                                          const SizedBox(width: 12),
                                         ],
-                                        if (party.mobile != null) ...[
+                                      ) : const SizedBox.shrink();
+
+                                      final mobileInfo = party.mobile != null ? Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
                                           const Icon(Icons.phone_outlined, size: 12, color: Colors.grey),
                                           const SizedBox(width: 4),
                                           Flexible(child: Text(party.mobile!, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))),
                                         ],
-                                      ],
-                                    ),
+                                      ) : const SizedBox.shrink();
+
+                                      if (isMobile) {
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            if (party.city != null) cityInfo,
+                                            if (party.mobile != null) ...[
+                                              const SizedBox(height: 4),
+                                              mobileInfo,
+                                            ],
+                                          ],
+                                        );
+                                      }
+
+                                      return Row(
+                                        children: [
+                                          if (party.city != null) ...[
+                                            Flexible(child: cityInfo),
+                                            const SizedBox(width: 12),
+                                          ],
+                                          if (party.mobile != null) ...[
+                                            Flexible(child: mobileInfo),
+                                          ],
+                                        ],
+                                      );
+                                    }),
                                   ),
                                   trailing: IconButton(
                                     icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 26),

@@ -5,7 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/error_translator.dart';
 import 'package:intl/intl.dart';
 
-class DesignHistorySheet extends ConsumerWidget {
+class DesignHistorySheet extends ConsumerStatefulWidget {
   final int designId;
   final String designNo;
 
@@ -16,8 +16,15 @@ class DesignHistorySheet extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(designHistoryProvider(designId));
+  ConsumerState<DesignHistorySheet> createState() => _DesignHistorySheetState();
+}
+
+class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final historyAsync = ref.watch(designHistoryProvider(widget.designId));
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -61,11 +68,11 @@ class DesignHistorySheet extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            designNo, 
+                            widget.designNo, 
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary)
                           ),
                           Text(
-                            'Stock History', 
+                            'Stock History Timeline', 
                             style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w600)
                           ),
                         ],
@@ -78,12 +85,43 @@ class DesignHistorySheet extends ConsumerWidget {
                   ],
                 ),
               ),
+              
+              // ── Search Bar ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                child: TextField(
+                  onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
+                  decoration: InputDecoration(
+                    hintText: 'Search Party, Location, or Type',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                  ),
+                ),
+              ),
+              
               const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
               
               // ── List ──
               Expanded(
                 child: historyAsync.when(
-                  data: (items) {
+                  data: (allItems) {
+                    final items = allItems.where((item) {
+                      if (_searchQuery.isEmpty) return true;
+                      return item.partyName.toLowerCase().contains(_searchQuery) ||
+                             item.locationName.toLowerCase().contains(_searchQuery) ||
+                             item.type.name.toLowerCase().contains(_searchQuery);
+                    }).toList();
+
                     if (items.isEmpty) {
                       return Center(
                         child: Column(
@@ -91,7 +129,7 @@ class DesignHistorySheet extends ConsumerWidget {
                           children: [
                             Icon(Icons.history_toggle_off_rounded, size: 64, color: Colors.grey.shade300),
                             const SizedBox(height: 16),
-                            Text('No history found', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+                            Text('No history match found', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
                           ],
                         ),
                       );
@@ -104,12 +142,36 @@ class DesignHistorySheet extends ConsumerWidget {
                       separatorBuilder: (context, index) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final item = items[index];
-                        final isPurchase = item.type == TransactionType.purchase;
-                        final color = isPurchase ? Colors.green : Colors.blue;
-                        final icon = isPurchase ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded;
-                        final bgColor = isPurchase ? Colors.green.shade50 : Colors.blue.shade50;
-                        final sign = isPurchase ? '+' : '-';
-                        final badgeText = isPurchase ? 'PURCHASE' : 'SALE';
+                        
+                        Color color; IconData icon; String badgeText; String sign;
+                        
+                        switch (item.type) {
+                          case TransactionType.purchase:
+                            color = Colors.green.shade600; icon = Icons.add_shopping_cart_rounded; badgeText = 'PURCHASE'; sign = '+';
+                            break;
+                          case TransactionType.sale:
+                            color = Colors.blue.shade600; icon = Icons.local_shipping_outlined; badgeText = 'SALE'; sign = '-'; // Note: db quantity is already negative for sales but we handle sign explicitly if needed.
+                            break;
+                          case TransactionType.transferIn:
+                            color = Colors.teal.shade600; icon = Icons.input_rounded; badgeText = 'TRANSFER IN'; sign = '+';
+                            break;
+                          case TransactionType.transferOut:
+                            color = Colors.grey.shade600; icon = Icons.output_rounded; badgeText = 'TRANSFER OUT'; sign = '-';
+                            break;
+                          case TransactionType.manualAdd:
+                            color = Colors.deepPurple.shade500; icon = Icons.add_box_outlined; badgeText = 'MANUAL ADD'; sign = '+';
+                            break;
+                          case TransactionType.adjustment:
+                            color = Colors.orange.shade700; icon = Icons.build_circle_outlined; badgeText = 'ADJUSTMENT'; sign = '';
+                            break;
+                        }
+                        
+                        // Handle sign display logic since quantity could be negative already from db
+                        final absQty = item.quantity.abs();
+                        final isPositive = sign == '+';
+                        final displayQty = '${isPositive ? "+" : "-"}$absQty';
+                        
+                        final bgColor = color.withValues(alpha: 0.1);
 
                         return Container(
                           decoration: BoxDecoration(
@@ -147,7 +209,7 @@ class DesignHistorySheet extends ConsumerWidget {
                                             ),
                                           ),
                                           Text(
-                                            '$sign${item.quantity}',
+                                            displayQty,
                                             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: color),
                                           ),
                                         ],
@@ -161,7 +223,7 @@ class DesignHistorySheet extends ConsumerWidget {
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: color.withValues(alpha: 0.1),
+                                              color: bgColor,
                                               borderRadius: BorderRadius.circular(4),
                                             ),
                                             child: Text(
@@ -180,12 +242,23 @@ class DesignHistorySheet extends ConsumerWidget {
                                               ),
                                             ],
                                           ),
+                                          if (item.identifier != null) ...[
+                                            Text('•', style: TextStyle(fontSize: 11, color: Colors.grey.shade400, fontWeight: FontWeight.w500)),
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.receipt_long_outlined, size: 12, color: Colors.grey.shade400),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  item.identifier!,
+                                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                          Text('•', style: TextStyle(fontSize: 11, color: Colors.grey.shade400, fontWeight: FontWeight.w500)),
                                           Text(
-                                            '•',
-                                            style: TextStyle(fontSize: 11, color: Colors.grey.shade400, fontWeight: FontWeight.w500),
-                                          ),
-                                          Text(
-                                            DateFormat('dd MMM yyyy • hh:mm a').format(item.date),
+                                            DateFormat('dd MMM yy • hh:mm a').format(item.date),
                                             style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                                           ),
                                         ],

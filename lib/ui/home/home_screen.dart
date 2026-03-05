@@ -4,11 +4,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/core_providers.dart';
 import '../../services/dashboard_providers.dart';
+import '../../models/shop.dart';
 import '../../services/export_service.dart';
 import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/error_view.dart';
 import '../common/confirmation_dialog.dart';
+import '../common/app_drawer.dart';
 import '../common/app_version_display.dart';
 import '../../utils/error_translator.dart';
 
@@ -61,6 +63,11 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+              onPressed: () => ref.invalidate(shopsProvider),
+              tooltip: 'Refresh Shops',
+            ),
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: IconButton(
@@ -79,7 +86,31 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(activeShop.shopName, style: const TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        title: Builder(builder: (context) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                activeShop.shopName, 
+                style: TextStyle(
+                  fontWeight: FontWeight.w800, 
+                  color: AppColors.textPrimary,
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 20,
+                )
+              ),
+              Text(
+                'Dashboard',
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width < 600 ? 9 : 11, 
+                  fontWeight: FontWeight.bold, 
+                  color: AppColors.accent, 
+                  letterSpacing: 0.5
+                ),
+              ),
+            ],
+          );
+        }),
         actions: [
           IconButton(
             icon: const Icon(Icons.store),
@@ -97,96 +128,9 @@ class HomeScreen extends ConsumerWidget {
             },
             tooltip: 'Switch Shop',
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _signOut(context),
-            tooltip: 'Sign Out',
-          ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryDim],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const Icon(Icons.account_balance, color: Colors.white, size: 48),
-                  const SizedBox(height: 8),
-                  Text(
-                    activeShop.shopName,
-                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard_outlined),
-              title: const Text('Dashboard'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.shopping_cart_outlined),
-              title: const Text('Sales Entry'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/sales');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.add_shopping_cart_outlined),
-              title: const Text('Purchase Entry'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/purchase');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.inventory_2_outlined),
-              title: const Text('Stock View'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/stock');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people_outline),
-              title: const Text('Parties'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/parties');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.request_quote_outlined),
-              title: const Text('Price List'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/pricelist');
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.bug_report_outlined),
-              title: const Text('Activity Log'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/logs');
-              },
-            ),
-            const AppVersionDisplay(),
-          ],
-        ),
-      ),
+      drawer: const AppDrawer(currentRoute: '/'),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(dashboardMetricsProvider),
         color: AppColors.primary,
@@ -212,33 +156,68 @@ class HomeScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      _MetricCard(
-                        title: 'Today Sales Qty',
-                        value: '${metrics['todaySalesQty'] ?? 0}',
-                        icon: Icons.analytics_rounded,
-                        color: const Color(0xFF1976D2),
-                        onTap: () => _showTodaySalesDetail(context, activeShop.id),
-                      ),
-                      const SizedBox(width: 16),
-                      _MetricCard(
-                        title: 'Low Stock (Qty < 3)',
-                        value: '${metrics['lowStockCount'] ?? 0}',
-                        icon: Icons.notification_important_rounded,
-                        color: const Color(0xFFD32F2F),
-                        onTap: () => _showLowStockDetail(context, activeShop.id),
-                      ),
-                      const SizedBox(width: 16),
-                      _MetricCard(
-                        title: 'Trending Qty (30d)',
-                        value: '${metrics['trendingMaxQty'] ?? 0}',
-                        icon: Icons.trending_up_rounded,
-                        color: const Color(0xFF388E3C),
-                        onTap: () => _showTrendingDetail(context, activeShop.id),
-                      ),
-                    ],
-                  ),
+                  Builder(builder: (context) {
+                    final isMobile = MediaQuery.of(context).size.width < 600;
+                    if (isMobile) {
+                      return Column(
+                        children: [
+                          _MetricCard(
+                            title: 'Today Sales Qty',
+                            value: '${metrics['todaySalesQty'] ?? 0}',
+                            icon: Icons.analytics_rounded,
+                            color: const Color(0xFF1976D2),
+                            onTap: () => _showTodaySalesDetail(context, activeShop.id),
+                            isExpanded: false,
+                          ),
+                          const SizedBox(height: 12),
+                          _MetricCard(
+                            title: 'Low Stock (Qty < 3)',
+                            value: '${metrics['lowStockCount'] ?? 0}',
+                            icon: Icons.notification_important_rounded,
+                            color: const Color(0xFFD32F2F),
+                            onTap: () => _showLowStockDetail(context, activeShop.id),
+                            isExpanded: false,
+                          ),
+                          const SizedBox(height: 12),
+                          _MetricCard(
+                            title: 'Trending Qty (30d)',
+                            value: '${metrics['trendingMaxQty'] ?? 0}',
+                            icon: Icons.trending_up_rounded,
+                            color: const Color(0xFF388E3C),
+                            onTap: () => _showTrendingDetail(context, activeShop.id),
+                            isExpanded: false,
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        _MetricCard(
+                          title: 'Today Sales Qty',
+                          value: '${metrics['todaySalesQty'] ?? 0}',
+                          icon: Icons.analytics_rounded,
+                          color: const Color(0xFF1976D2),
+                          onTap: () => _showTodaySalesDetail(context, activeShop.id),
+                        ),
+                        const SizedBox(width: 16),
+                        _MetricCard(
+                          title: 'Low Stock (Qty < 3)',
+                          value: '${metrics['lowStockCount'] ?? 0}',
+                          icon: Icons.notification_important_rounded,
+                          color: const Color(0xFFD32F2F),
+                          onTap: () => _showLowStockDetail(context, activeShop.id),
+                        ),
+                        const SizedBox(width: 16),
+                        _MetricCard(
+                          title: 'Trending Qty (30d)',
+                          value: '${metrics['trendingMaxQty'] ?? 0}',
+                          icon: Icons.trending_up_rounded,
+                          color: const Color(0xFF388E3C),
+                          onTap: () => _showTrendingDetail(context, activeShop.id),
+                        ),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 40),
                   Text(
                     'Quick Operations',
@@ -385,38 +364,57 @@ class _ExportBottomSheet extends ConsumerWidget {
   const _ExportBottomSheet({required this.shopId, required this.shopName});
 
   Widget _buildExportRow(BuildContext context, WidgetRef ref, String title, Future<void> Function() onExcel, Future<void> Function() onPdf) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    final excelButton = TextButton.icon(
+      icon: const Icon(Icons.table_chart, color: Colors.green),
+      label: const Text('Excel'),
+      onPressed: () async {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Generating $title Excel...')));
+        try {
+          await onExcel();
+        } catch (e) {
+          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+        }
+      },
+    );
+
+    final pdfButton = TextButton.icon(
+      icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+      label: const Text('PDF'),
+      onPressed: () async {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Generating $title PDF...')));
+        try {
+          await onPdf();
+        } catch (e) {
+          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+        }
+      },
+    );
+
+    if (isMobile) {
+      return ListTile(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Row(
+          children: [
+            excelButton,
+            const SizedBox(width: 8),
+            pdfButton,
+          ],
+        ),
+      );
+    }
+
     return ListTile(
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextButton.icon(
-            icon: const Icon(Icons.table_chart, color: Colors.green),
-            label: const Text('Excel'),
-            onPressed: () async {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Generating $title Excel...')));
-              try {
-                await onExcel();
-              } catch (e) {
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
-              }
-            },
-          ),
+          excelButton,
           const SizedBox(width: 8),
-          TextButton.icon(
-            icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-            label: const Text('PDF'),
-            onPressed: () async {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Generating $title PDF...')));
-              try {
-                await onPdf();
-              } catch (e) {
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
-              }
-            },
-          ),
+          pdfButton,
         ],
       )
     );
@@ -463,6 +461,7 @@ class _MetricCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
+  final bool isExpanded;
 
   const _MetricCard({
     required this.title,
@@ -470,73 +469,75 @@ class _MetricCard extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.onTap,
+    this.isExpanded = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: RepaintBoundary(
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              colors: [color.withOpacity(0.85), color],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.25),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    final content = RepaintBoundary(
+      child: Container(
+        width: isExpanded ? null : double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [color.withValues(alpha: 0.85), color],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(20),
-              splashColor: Colors.white.withOpacity(0.1),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(icon, color: Colors.white, size: 24),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.25),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            splashColor: Colors.white.withValues(alpha: 0.1),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Icon(icon, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
       ),
     );
+
+    return isExpanded ? Expanded(child: content) : content;
   }
 }
 
@@ -799,20 +800,50 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
         ),
       ),
       child: shopsAsync.when(
-        data: (shops) {
-          if (shops.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+        data: (List<Shop> allShops) {
+          if (allShops.isEmpty) {
+            return RefreshIndicator(
+              onRefresh: () async => ref.invalidate(shopsProvider),
+              color: AppColors.primary,
+              child: Stack(
                 children: [
-                  const Icon(Icons.store_mall_directory_outlined, size: 80, color: AppColors.textHint),
-                  const SizedBox(height: 16),
-                  Text('No shops available', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  const Text('Please contact your administrator to assign shops.', textAlign: TextAlign.center),
+                  ListView(), // Required for RefreshIndicator
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.store_mall_directory_outlined, size: 80, color: AppColors.textHint),
+                        const SizedBox(height: 16),
+                        Text('No shops available', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.textSecondary)),
+                        const SizedBox(height: 8),
+                        const Text('Please contact your administrator to assign shops.', textAlign: TextAlign.center),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => ref.invalidate(shopsProvider),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Check Again'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );
+          }
+
+          // Auto-select if ONLY ONE shop exists
+          if (allShops.length == 1) {
+             WidgetsBinding.instance.addPostFrameCallback((_) {
+               if (ref.read(activeShopProvider) == null) {
+                 ref.read(activeShopProvider.notifier).setShop(allShops.first);
+               }
+             });
           }
 
           return LayoutBuilder(
@@ -852,11 +883,11 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                         crossAxisCount: crossAxisCount,
                         crossAxisSpacing: 24,
                         mainAxisSpacing: 24,
-                        mainAxisExtent: 100,
+                        mainAxisExtent: 110,
                       ),
-                      itemCount: shops.length,
+                      itemCount: allShops.length,
                       itemBuilder: (context, index) {
-                        final shop = shops[index];
+                        final shop = allShops[index];
                         final isHovered = _hoveredIndex == index;
 
                         final List<IconData> shopIcons = [
@@ -914,14 +945,14 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                                           height: 64,
                                           decoration: BoxDecoration(
                                             gradient: LinearGradient(
-                                              colors: [color.withOpacity(0.8), color],
+                                              colors: [color.withValues(alpha: 0.8), color],
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                             ),
                                             borderRadius: BorderRadius.circular(16),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: color.withOpacity(0.2),
+                                                color: color.withValues(alpha: 0.2),
                                                 blurRadius: 6,
                                                 offset: const Offset(0, 3),
                                               ),
@@ -937,17 +968,21 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                                             children: [
                                               Text(
                                                 shop.shopName,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(
                                                   fontWeight: FontWeight.w800,
-                                                  fontSize: 20,
+                                                  fontSize: 18,
                                                   color: AppColors.primary,
                                                 ),
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
                                                 'Tap to open shop',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
-                                                  color: AppColors.textSecondary.withOpacity(0.6),
+                                                  color: AppColors.textSecondary.withValues(alpha: 0.6),
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                 ),
@@ -957,7 +992,7 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                                         ),
                                         Icon(
                                           Icons.arrow_forward_rounded,
-                                          color: isHovered ? color : AppColors.divider.withRed(150),
+                                          color: isHovered ? color : AppColors.divider.withValues(alpha: 0.6),
                                         ),
                                       ],
                                     ),

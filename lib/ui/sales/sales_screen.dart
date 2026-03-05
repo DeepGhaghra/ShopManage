@@ -10,6 +10,7 @@ import '../../models/pricelist.dart';
 import '../../services/core_providers.dart';
 import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
+import '../common/app_drawer.dart';
 import '../common/confirmation_dialog.dart';
 import '../common/loading_overlay.dart';
 import '../common/error_view.dart';
@@ -68,8 +69,8 @@ class _SaleItemLine {
     return (folder?['folder_name'] as String?) ?? (head?['product_name'] as String?) ?? '';
   }
 
-  int quantity = 1;
-  final TextEditingController qtyController = TextEditingController(text: '1');
+  int quantity = 0;
+  final TextEditingController qtyController = TextEditingController(); 
   final TextEditingController rateController = TextEditingController();
 
   int get currentRate => int.tryParse(rateController.text) ?? 0;
@@ -504,132 +505,140 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             const SizedBox(height: 24),
 
             // ── Invoice No + Party ──────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _invoiceController,
-                    readOnly: true,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    decoration: InputDecoration(
-                      labelText: 'Invoice Number',
-                      labelStyle: TextStyle(color: Colors.grey.shade600),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      prefixIcon: const Icon(Icons.receipt_long, color: Colors.grey),
-                    ),
-                  ),
+            // ── Invoice No + Party ──────────────────────────────────────────
+            Builder(builder: (context) {
+              final isMobile = MediaQuery.of(context).size.width < 600;
+              final invoiceField = TextFormField(
+                controller: _invoiceController,
+                readOnly: true,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                decoration: InputDecoration(
+                  labelText: 'Invoice Number',
+                  labelStyle: TextStyle(color: Colors.grey.shade600),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  prefixIcon: const Icon(Icons.receipt_long, color: Colors.grey),
                 ),
-                const SizedBox(width: 16),
-                // ── Searchable Party ────────────────────────────────────────
-                Expanded(
-                  flex: 2,
-                  child: partiesAsync.when(
-                    data: (parties) {
-                      return Autocomplete<Party>(
-                        key: ValueKey('party_auto_${_editingInvoiceNo}'), // Removed _formResetKey from here to keep it stable
-                        optionsMaxHeight: 250,
-                        displayStringForOption: (p) => p.partyName,
-                        optionsBuilder: (textEditingValue) {
-                          if (textEditingValue.text.isEmpty) return parties;
-                          return parties.where((p) => p.partyName.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-                        },
-                        onSelected: (party) {
-                          setState(() {
-                            _selectedParty = party;
-                            _partySearchController.text = party.partyName;
-                          });
-                        },
-                        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                          // Sync the Autocomplete's internal controller with our persistent one
-                          if (controller.text != _partySearchController.text && _selectedParty != null) {
-                            Future.microtask(() => controller.text = _partySearchController.text);
-                          }
+              );
 
-
-                          return TextFormField(
-                            controller: controller,
-                            focusNode: focusNode,
-                            decoration: InputDecoration(
-                              labelText: 'Search Party',
-                              labelStyle: TextStyle(color: AppColors.primary.withAlpha(180)),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                              filled: true,
-                              fillColor: Colors.white,
-                              prefixIcon: const Icon(Icons.business_center_rounded, color: AppColors.primary),
-                              suffixIcon: (controller.text.isNotEmpty) 
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear, size: 18), 
-                                    onPressed: () {
-                                      controller.clear();
-                                      _partySearchController.clear();
-                                      setState(() => _selectedParty = null);
-                                    }
-                                  )
-                                : const Icon(Icons.search, size: 20, color: Colors.grey),
-                            ),
-                            onFieldSubmitted: (_) => onFieldSubmitted(),
-                          );
-                        },
-                        optionsViewBuilder: (context, onSelected, options) {
-                          return Align(
-                            alignment: Alignment.topLeft,
-                            child: Material(
-                              elevation: 8,
-                              borderRadius: BorderRadius.circular(14),
-                              color: Colors.white,
-                              clipBehavior: Clip.antiAlias,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxHeight: 220, maxWidth: 400),
-                                child: ListView.builder(
-                                  padding: EdgeInsets.zero,
-                                  shrinkWrap: true,
-                                  itemCount: options.length,
-                                  itemBuilder: (context, index) {
-                                    final party = options.elementAt(index);
-                                    return InkWell(
-                                      onTap: () => onSelected(party),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(color: AppColors.primary.withAlpha(15), borderRadius: BorderRadius.circular(8)),
-                                              child: const Icon(Icons.business, size: 16, color: AppColors.primary),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(party.partyName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                                                  if (party.city?.isNotEmpty ?? false)
-                                                    Text(party.city!, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+              final partyField = partiesAsync.when(
+                data: (parties) {
+                  return Autocomplete<Party>(
+                    key: ValueKey('party_auto_${_editingInvoiceNo}'),
+                    optionsMaxHeight: 250,
+                    displayStringForOption: (p) => p.partyName,
+                    optionsBuilder: (textEditingValue) {
+                      if (textEditingValue.text.isEmpty) return parties;
+                      return parties.where((p) => p.partyName.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                    },
+                    onSelected: (party) {
+                      setState(() {
+                        _selectedParty = party;
+                        _partySearchController.text = party.partyName;
+                      });
+                    },
+                    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                      if (controller.text != _partySearchController.text && _selectedParty != null) {
+                        Future.microtask(() => controller.text = _partySearchController.text);
+                      }
+                      return TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        decoration: InputDecoration(
+                          labelText: 'Search Party',
+                          labelStyle: TextStyle(color: AppColors.primary.withValues(alpha: 0.7)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+                          filled: true,
+                          fillColor: Colors.white,
+                          prefixIcon: const Icon(Icons.business_center_rounded, color: AppColors.primary),
+                          suffixIcon: (controller.text.isNotEmpty) 
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18), 
+                                onPressed: () {
+                                  controller.clear();
+                                  _partySearchController.clear();
+                                  setState(() => _selectedParty = null);
+                                }
+                              )
+                            : const Icon(Icons.search, size: 20, color: Colors.grey),
+                        ),
+                        onFieldSubmitted: (_) => onFieldSubmitted(),
                       );
                     },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (err, stack) => Text('Error loading parties: $err'),
-                  ),
-                ),
-              ],
-            ),
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 8,
+                          borderRadius: BorderRadius.circular(14),
+                          color: Colors.white,
+                          clipBehavior: Clip.antiAlias,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxHeight: 220, maxWidth: isMobile ? MediaQuery.of(context).size.width - 64 : 400),
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              itemBuilder: (context, index) {
+                                final party = options.elementAt(index);
+                                return InkWell(
+                                  onTap: () => onSelected(party),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                                          child: const Icon(Icons.business, size: 16, color: AppColors.primary),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(party.partyName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                                              if (party.city?.isNotEmpty ?? false)
+                                                Text(party.city!, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Text('Error loading parties: $err'),
+              );
+
+              if (isMobile) {
+                return Column(
+                  children: [
+                    invoiceField,
+                    const SizedBox(height: 16),
+                    partyField,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: invoiceField),
+                  const SizedBox(width: 16),
+                  Expanded(flex: 2, child: partyField),
+                ],
+              );
+            }),
             const SizedBox(height: 32),
 
             // ── Order Items Header ──────────────────────────────────────────
@@ -655,8 +664,8 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                     onSelected: (row) async {
                       setState(() { 
                         line.stockRow = row; 
-                        line.quantity = 1; 
-                        line.qtyController.text = '1'; 
+                        line.quantity = 0; 
+                        line.qtyController.text = ''; 
                       });
                       final activeShop = ref.read(activeShopProvider);
                       if (activeShop != null && _selectedParty != null) {
@@ -697,72 +706,87 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                 color: AppColors.textPrimary,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Total Sheets', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                      Text(
-                        '${_lines.where((l) => l.stockRow != null).fold<int>(0, (sum, l) => sum + l.quantity)}',
-                        style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_editingInvoiceNo != null)
-                        Container(
-                          margin: const EdgeInsets.only(right: 12),
-                          child: OutlinedButton.icon(
-                            onPressed: _isSaving ? null : _cancelEdit,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white70,
-                              side: const BorderSide(color: Colors.white24),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            icon: const Icon(Icons.close, size: 18),
-                            label: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      
-                      ElevatedButton(
-                        onPressed: _isSaving ? null : () => _saveChallan(print: false),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.15),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                          ),
-                        ),
-                        child: _isSaving 
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
-                          : Text(_editingInvoiceNo != null ? 'Update Only' : 'Save Only', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        onPressed: _isSaving ? null : () => _saveChallan(print: true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Builder(builder: (context) {
+                final isMobile = MediaQuery.of(context).size.width < 600;
+                
+                final totalSection = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Total Sheets', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    Text(
+                      '${_lines.where((l) => l.stockRow != null).fold<int>(0, (sum, l) => sum + l.quantity)}',
+                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                );
+
+                final buttonSection = Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  alignment: isMobile ? WrapAlignment.center : WrapAlignment.end,
+                  children: [
+                    if (_editingInvoiceNo != null)
+                      OutlinedButton.icon(
+                        onPressed: _isSaving ? null : _cancelEdit,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white70,
+                          side: const BorderSide(color: Colors.white24),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          elevation: 4,
-                          shadowColor: AppColors.primary.withOpacity(0.4),
                         ),
-                        icon: _isSaving ? const SizedBox.shrink() : const Icon(Icons.print_rounded, size: 18),
-                        label: Text(_editingInvoiceNo != null ? 'Update & Print' : 'Save & Print', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
+                    
+                    ElevatedButton(
+                      onPressed: _isSaving ? null : () => _saveChallan(print: false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.15),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                        ),
+                      ),
+                      child: _isSaving 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+                        : Text(_editingInvoiceNo != null ? 'Update Only' : 'Save Only', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _isSaving ? null : () => _saveChallan(print: true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 4,
+                        shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                      ),
+                      icon: _isSaving ? const SizedBox.shrink() : const Icon(Icons.print_rounded, size: 18),
+                      label: Text(_editingInvoiceNo != null ? 'Update & Print' : 'Save & Print', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                );
+
+                if (isMobile) {
+                  return Column(
+                    children: [
+                      totalSection,
+                      const SizedBox(height: 20),
+                      SizedBox(width: double.infinity, child: buttonSection),
                     ],
-                  ),
-                ],
-              ),
+                  );
+                }
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    totalSection,
+                    buttonSection,
+                  ],
+                );
+              }),
             ),
           ],
         ),
@@ -951,30 +975,36 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
 
     return Scaffold(
       backgroundColor: _editingInvoiceNo != null ? const Color(0xFFF1F5F9) : AppColors.scaffoldBg, // Light slate in edit mode
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Sales Challan', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-            if (ref.watch(activeShopProvider) != null)
-              Row(
-                children: [
-                  const Icon(Icons.storefront_rounded, size: 14, color: AppColors.accent),
-                  const SizedBox(width: 4),
-                  Text(
-                    ref.watch(activeShopProvider)!.shopName,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.accent),
-                  ),
-                ],
-              ),
-          ],
-        ),
+        title: Builder(builder: (context) {
+          final isMobile = MediaQuery.of(context).size.width < 600;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Sales Challan', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: isMobile ? 18 : 20)),
+              if (ref.watch(activeShopProvider) != null)
+                Row(
+                  children: [
+                    const Icon(Icons.storefront_rounded, size: 14, color: AppColors.accent),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        ref.watch(activeShopProvider)!.shopName,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: isMobile ? 11 : 13, fontWeight: FontWeight.w600, color: AppColors.accent),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          );
+        }),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
+      drawer: const AppDrawer(currentRoute: '/sales'),
       body: Stack(
         children: [
           Center(
@@ -1054,225 +1084,257 @@ class _SaleItemRowState extends State<_SaleItemRow> {
         border: Border.all(color: AppColors.divider),
         boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 6, offset: const Offset(0, 2))],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppColors.primary.withAlpha(12), shape: BoxShape.circle),
-            child: Text('${widget.index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Autocomplete<Map<String, dynamic>>(
-                    initialValue: widget.line.stockRow != null
-                        ? TextEditingValue(text: '${widget.line.designNo}  |  ${widget.line.locationName}  |  ${widget.line.maxQuantity}')
-                        : TextEditingValue.empty,
-                    displayStringForOption: (row) {
-                      final d = (row['products_design']?['design_no'] as String?) ?? '';
-                      final l = (row['locations']?['name'] as String?) ?? '';
-                      final q = (row['quantity'] as int?) ?? 0;
-                      return '$d  |  $l  |  $q';
-                    },
-                    optionsBuilder: (tv) {
-                      final q = tv.text.toLowerCase();
-                      
-                      // ── If query is empty, show top 50 available items ──
-                      if (q.isEmpty) {
-                        return widget.availableStock.where((r) {
-                          final pd = _getData(r['products_design']);
-                          final loc = _getData(r['locations']);
-                          final dId = (pd?['id'] as int?) ?? 0;
-                          final lId = (loc?['id'] as int?) ?? 0;
-                          return !widget.usedStockKeys.contains('${dId}_${lId}');
-                        }).take(50);
-                      }
-                      
-                      return widget.availableStock.where((r) {
-                        final pd = _getData(r['products_design']);
-                        final loc = _getData(r['locations']);
-                        
-                        final dId = (pd?['id'] as int?) ?? 0;
-                        final lId = (loc?['id'] as int?) ?? 0;
-                        final key = '${dId}_${lId}';
-                        
-                        // Exclusion logic
-                        if (widget.line.stockRow != null && widget.line.designId == dId && widget.line.locationId == lId) {
-                           // Allowed
-                        } else if (widget.usedStockKeys.contains(key)) {
-                          return false;
-                        }
+      child: Builder(builder: (context) {
+        final isMobile = MediaQuery.of(context).size.width < 600;
 
-                        // Fast search logic using pre-calculated key (Fallback to design_no if key missing)
-                        final searchKey = r['search_key'] as String?;
-                        if (searchKey != null) return searchKey.contains(q);
-                        
-                        final dNo = (pd?['design_no'] as String? ?? '').toLowerCase();
-                        final lName = (loc?['name'] as String? ?? '').toLowerCase();
-                        return dNo.contains(q) || lName.contains(q);
-                      });
-                    },
-                    onSelected: widget.onSelected,
-                    optionsViewBuilder: (context, onSel, options) {
-                      return Align(
-                        alignment: Alignment.topLeft,
-                        child: Material(
-                          elevation: 10,
-                          borderRadius: BorderRadius.circular(16),
-                          clipBehavior: Clip.antiAlias,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 350, maxWidth: 500),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                  color: AppColors.primary.withAlpha(20),
-                                  child: const Row(
-                                    children: [
-                                      Expanded(flex: 3, child: Text('Design No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
-                                      Expanded(flex: 2, child: Text('Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
-                                      SizedBox(width: 50, child: Text('Stock', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
-                                    ],
-                                  ),
-                                ),
-                                Flexible(
-                                  child: ListView.builder(
-                                    padding: EdgeInsets.zero,
-                                    shrinkWrap: true,
-                                    itemCount: options.length,
-                                    itemBuilder: (context, idx) {
-                                      final row = options.elementAt(idx);
-                                      final pd = _getData(row['products_design']);
-                                      final loc = _getData(row['locations']);
-                                      
-                                      final dNo = (pd?['design_no'] as String?) ?? '';
-                                      final lName = (loc?['name'] as String?) ?? '';
-                                      final qty = (row['quantity'] as int?) ?? 0;
+        final itemIndex = Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.12), shape: BoxShape.circle),
+          child: Text('${widget.index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+        );
 
-                                      return InkWell(
-                                        onTap: () => onSel(row),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
-                                          child: Row(
-                                            children: [
-                                              Expanded(flex: 3, child: Text(dNo, style: const TextStyle(fontWeight: FontWeight.w600))),
-                                              Expanded(flex: 2, child: Text(lName, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))),
-                                              SizedBox(
-                                                width: 50, 
-                                                child: Text('$qty', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, color: qty < 5 ? Colors.red : Colors.green))
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+        final searchField = Autocomplete<Map<String, dynamic>>(
+          initialValue: widget.line.stockRow != null
+              ? TextEditingValue(text: '${widget.line.designNo}  |  ${widget.line.locationName}  |  ${widget.line.maxQuantity}')
+              : TextEditingValue.empty,
+          displayStringForOption: (row) {
+            final d = (row['products_design']?['design_no'] as String?) ?? '';
+            final l = (row['locations']?['name'] as String?) ?? '';
+            final q = (row['quantity'] as int?) ?? 0;
+            return '$d  |  $l  |  $q';
+          },
+          optionsBuilder: (tv) {
+            final q = tv.text.toLowerCase();
+            if (q.isEmpty) {
+              return widget.availableStock.where((r) {
+                final pd = _getData(r['products_design']);
+                final loc = _getData(r['locations']);
+                final dId = (pd?['id'] as int?) ?? 0;
+                final lId = (loc?['id'] as int?) ?? 0;
+                return !widget.usedStockKeys.contains('${dId}_${lId}');
+              }).take(50);
+            }
+            return widget.availableStock.where((r) {
+              final pd = _getData(r['products_design']);
+              final loc = _getData(r['locations']);
+              final dId = (pd?['id'] as int?) ?? 0;
+              final lId = (loc?['id'] as int?) ?? 0;
+              final key = '${dId}_${lId}';
+              if (widget.line.stockRow != null && widget.line.designId == dId && widget.line.locationId == lId) {
+                 // Allowed
+              } else if (widget.usedStockKeys.contains(key)) {
+                return false;
+              }
+              final searchKey = r['search_key'] as String?;
+              if (searchKey != null) return searchKey.contains(q);
+              final dNo = (pd?['design_no'] as String? ?? '').toLowerCase();
+              final lName = (loc?['name'] as String? ?? '').toLowerCase();
+              return dNo.contains(q) || lName.contains(q);
+            });
+          },
+          onSelected: widget.onSelected,
+          optionsViewBuilder: (context, onSel, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 10,
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAlias,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: 350, maxWidth: isMobile ? MediaQuery.of(context).size.width - 64 : 500),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        child: const Row(
+                          children: [
+                            Expanded(flex: 3, child: Text('Design No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
+                            Expanded(flex: 2, child: Text('Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
+                            SizedBox(width: 50, child: Text('Stock', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
+                          ],
                         ),
-                      );
-                    },
-                    fieldViewBuilder: (context, ctrl, focusNode, onSub) {
-                      return Consumer(builder: (context, ref, _) {
-                        final stockStatus = ref.watch(shopStockProvider);
-                        final isLoading = stockStatus.isLoading;
-                        final isError = stockStatus.hasError;
+                      ),
+                      Flexible(
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, idx) {
+                            final row = options.elementAt(idx);
+                            final pd = _getData(row['products_design']);
+                            final loc = _getData(row['locations']);
+                            final dNo = (pd?['design_no'] as String?) ?? '';
+                            final lName = (loc?['name'] as String?) ?? '';
+                            final qty = (row['quantity'] as int?) ?? 0;
 
-                        return TextFormField(
-                          controller: ctrl,
-                          focusNode: focusNode,
-                          decoration: InputDecoration(
-                            labelText: isLoading 
-                                ? 'Fetching stock items...' 
-                                : (isError ? 'Error loading stock' : 'Search Design Numbers'),
-                            hintText: 'Type to filter...',
-                            isDense: true,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                            filled: true,
-                            fillColor: (isLoading || isError) ? Colors.grey.shade50 : Colors.white,
-                            prefixIcon: isLoading 
-                                ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
-                                : Icon(isError ? Icons.error_outline : Icons.manage_search_rounded, color: isError ? Colors.red : AppColors.accent),
-                            suffixIcon: widget.line.stockRow != null
-                                ? IconButton(
-                                    icon: const Icon(Icons.close, size: 16),
-                                    onPressed: () { 
-                                      ctrl.clear(); 
-                                      widget.onSelected({}); 
-                                      setState(() { widget.line.stockRow = null; });
-                                    },
-                                  )
-                                : null,
-                          ),
-                        );
-                      });
-                    },
+                            return InkWell(
+                              onTap: () => onSel(row),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
+                                child: Row(
+                                  children: [
+                                    Expanded(flex: 3, child: Text(dNo, style: const TextStyle(fontWeight: FontWeight.w600))),
+                                    Expanded(flex: 2, child: Text(lName, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))),
+                                    SizedBox(
+                                      width: 50, 
+                                      child: Text('$qty', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, color: qty < 5 ? Colors.red : Colors.green))
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 100,
-                  child: TextFormField(
-                    controller: widget.line.qtyController,
-                    enabled: widget.line.stockRow != null,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      labelText: 'Qty',
-                      helperText: widget.line.stockRow != null ? 'Max: ${widget.line.maxQuantity}' : null,
-                      helperStyle: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11),
-                      isDense: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) {
-                      int q = int.tryParse(v) ?? 1;
-                      if (q > widget.line.maxQuantity) q = widget.line.maxQuantity;
-                      widget.line.quantity = q > 0 ? q : 1;
-                      if (q.toString() != v) {
-                        widget.line.qtyController.text = widget.line.quantity.toString();
-                        widget.line.qtyController.selection = TextSelection.fromPosition(TextPosition(offset: widget.line.qtyController.text.length));
-                      }
-                      widget.onChanged();
-                    },
-                  ),
+              ),
+            );
+          },
+          fieldViewBuilder: (context, ctrl, focusNode, onSub) {
+            return Consumer(builder: (context, ref, _) {
+              final stockStatus = ref.watch(shopStockProvider);
+              final isLoading = stockStatus.isLoading;
+              final isError = stockStatus.hasError;
+
+              return TextFormField(
+                controller: ctrl,
+                focusNode: focusNode,
+                decoration: InputDecoration(
+                  labelText: isLoading ? 'Fetching...' : (isError ? 'Error loading stock' : (isMobile ? 'Search Designs' : 'Search Design Numbers')),
+                  hintText: isMobile ? 'Type Design...' : 'Type to filter...',
+                  isDense: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+                  filled: true,
+                  fillColor: (isLoading || isError) ? Colors.grey.shade50 : Colors.white,
+                  prefixIcon: isLoading 
+                      ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
+                      : Icon(isError ? Icons.error_outline : Icons.manage_search_rounded, size: isMobile ? 20 : 24, color: isError ? Colors.red : AppColors.accent),
+                  suffixIcon: widget.line.stockRow != null
+                      ? IconButton(
+                          icon: const Icon(Icons.close, size: 16),
+                          onPressed: () { 
+                            ctrl.clear(); 
+                            widget.onSelected({}); 
+                            setState(() { widget.line.stockRow = null; });
+                          },
+                        )
+                      : null,
                 ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 100,
-                  child: TextFormField(
-                    controller: widget.line.rateController,
-                    enabled: widget.line.stockRow != null,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      labelText: 'Rate',
-                      isDense: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) => widget.onChanged(),
-                  ),
-                ),
-              ],
+              );
+            });
+          },
+        );
+
+        final qtyField = SizedBox(
+          width: isMobile ? double.infinity : 100,
+          child: TextFormField(
+            controller: widget.line.qtyController,
+            enabled: widget.line.stockRow != null,
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              labelText: 'Qty',
+              helperText: widget.line.stockRow != null ? 'Max: ${widget.line.maxQuantity}' : null,
+              helperStyle: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11),
+              isDense: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             ),
+            keyboardType: TextInputType.number,
+            onChanged: (v) {
+              if (v.isEmpty) {
+                 widget.line.quantity = 0;
+                 widget.onChanged();
+                 return;
+              }
+              int q = int.tryParse(v) ?? 0;
+              if (q > widget.line.maxQuantity) {
+                q = widget.line.maxQuantity;
+                widget.line.qtyController.text = q.toString();
+                widget.line.qtyController.selection = TextSelection.fromPosition(TextPosition(offset: widget.line.qtyController.text.length));
+              }
+              widget.line.quantity = q;
+              widget.onChanged();
+            },
           ),
-          IconButton(
-            icon: Icon(Icons.delete_outline, color: Colors.red.shade300),
-            onPressed: widget.onRemove,
+        );
+
+        final rateField = SizedBox(
+          width: isMobile ? double.infinity : 100,
+          child: TextFormField(
+            controller: widget.line.rateController,
+            enabled: widget.line.stockRow != null,
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              labelText: 'Rate',
+              isDense: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (v) => widget.onChanged(),
           ),
-        ],
-      ),
+        );
+
+        if (isMobile) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  itemIndex,
+                  const SizedBox(width: 12),
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, color: Colors.red.shade300),
+                    onPressed: widget.onRemove,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              searchField,
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: qtyField),
+                  const SizedBox(width: 12),
+                  Expanded(child: rateField),
+                ],
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            itemIndex,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: searchField),
+                  const SizedBox(width: 12),
+                  qtyField,
+                  const SizedBox(width: 12),
+                  rateField,
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete_outline, color: Colors.red.shade300),
+              onPressed: widget.onRemove,
+            ),
+          ],
+        );
+      }),
     );
   }
 }

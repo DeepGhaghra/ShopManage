@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/error_translator.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
+import '../common/app_drawer.dart';
 import 'design_history_sheet.dart';
 
 class StockScreen extends ConsumerStatefulWidget {
@@ -50,29 +51,66 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     final stockAsync = ref.watch(shopStockProvider);
     final activeShop = ref.watch(activeShopProvider);
     final shopName = activeShop?.shopName ?? '';
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: Column(
-          children: [
-            const Text('Stock View', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-            if (shopName.isNotEmpty)
+        title: Builder(builder: (context) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Text(
-                shopName,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.accent, letterSpacing: 0.5),
+                'Stock View', 
+                style: TextStyle(
+                  fontWeight: FontWeight.w800, 
+                  color: AppColors.textPrimary,
+                  fontSize: isMobile ? 16 : 20,
+                )
               ),
-          ],
-        ),
+              if (shopName.isNotEmpty)
+                Text(
+                  shopName,
+                  style: TextStyle(
+                    fontSize: isMobile ? 9 : 11, 
+                    fontWeight: FontWeight.bold, 
+                    color: AppColors.accent, 
+                    letterSpacing: 0.5
+                  ),
+                ),
+            ],
+          );
+        }),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         actions: [
-          _buildAppBarAction(Icons.add_shopping_cart_rounded, 'Add Stock', () => _showAddStockDialog(context, ref), AppColors.primary),
-          const SizedBox(width: 8),
-          _buildAppBarAction(Icons.compare_arrows_rounded, 'Transfer Stock', () => _showTransferStockDialog(context, ref), AppColors.primaryDim),
+          Builder(builder: (context) {
+            if (isMobile) {
+              return PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: AppColors.primary),
+                onSelected: (value) {
+                  if (value == 'add') _showAddStockDialog(context, ref);
+                  if (value == 'transfer') _showTransferStockDialog(context, ref);
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'add', child: Row(children: [Icon(Icons.add_shopping_cart, size: 18), SizedBox(width: 8), Text('Add Stock')])),
+                  const PopupMenuItem(value: 'transfer', child: Row(children: [Icon(Icons.compare_arrows, size: 18), SizedBox(width: 8), Text('Transfer Stock')])),
+                ],
+              );
+            }
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildAppBarAction(Icons.add_shopping_cart_rounded, 'Add Stock', () => _showAddStockDialog(context, ref), AppColors.primary),
+                const SizedBox(width: 8),
+                _buildAppBarAction(Icons.compare_arrows_rounded, 'Transfer Stock', () => _showTransferStockDialog(context, ref), AppColors.primaryDim),
+              ],
+            );
+          }),
         ],
       ),
+      drawer: const AppDrawer(currentRoute: '/stock'),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
@@ -119,8 +157,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              Row(
-                                children: [
+                              Builder(builder: (context) {
+                                final isMobile = MediaQuery.of(context).size.width < 600;
+                                final chips = [
                                   _FilterChip(
                                     label: 'Design NO',
                                     isSelected: _filterMode == 'design',
@@ -132,13 +171,31 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                     isSelected: _filterMode == 'location',
                                     onTap: () => setState(() => _filterMode = 'location'),
                                   ),
-                                  const Spacer(),
-                                  Text(
-                                    '${filteredList.length} Items',
-                                    style: TextStyle(color: Colors.blueGrey.shade300, fontSize: 11, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
+                                ];
+                                
+                                final countText = Text(
+                                  '${filteredList.length} Items',
+                                  style: TextStyle(color: Colors.blueGrey.shade300, fontSize: 11, fontWeight: FontWeight.bold),
+                                );
+
+                                if (isMobile) {
+                                  return Column(
+                                    children: [
+                                      Row(children: chips),
+                                      const SizedBox(height: 12),
+                                      Row(mainAxisAlignment: MainAxisAlignment.end, children: [countText]),
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  children: [
+                                    ...chips,
+                                    const Spacer(),
+                                    countText,
+                                  ],
+                                );
+                              }),
                             ],
                           ),
                         ),
@@ -154,13 +211,15 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                           color: Color(0xFF475569),
                           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                         ),
-                        child: const Row(
-                          children: [
-                            Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
-                            Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
-                            Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.right, style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
-                          ],
-                        ),
+                        child: Builder(builder: (context) {
+                          return Row(
+                            children: [
+                              Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(color: Colors.white70, fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
+                              Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(color: Colors.white70, fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
+                              Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.right, style: TextStyle(color: Colors.white70, fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
+                            ],
+                          );
+                        }),
                       ),
                     ),
 
@@ -227,7 +286,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                           mainAxisAlignment: MainAxisAlignment.end,
                                           children: [
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                               decoration: BoxDecoration(
                                                 color: isLow ? Colors.orange.shade50 : Colors.green.shade50,
                                                 borderRadius: BorderRadius.circular(8),
@@ -237,7 +296,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                                 style: TextStyle(
                                                   color: isLow ? Colors.orange.shade700 : Colors.green.shade700,
                                                   fontWeight: FontWeight.w900,
-                                                  fontSize: 13,
+                                                  fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 13,
                                                 ),
                                               ),
                                             ),

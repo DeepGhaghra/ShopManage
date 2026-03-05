@@ -8,6 +8,7 @@ import '../../models/party.dart';
 import '../../models/product_head.dart';
 import '../../models/pricelist.dart';
 import '../../theme/app_theme.dart';
+import '../common/app_drawer.dart';
 import '../../utils/error_translator.dart';
 
 class PricelistScreen extends ConsumerStatefulWidget {
@@ -114,10 +115,36 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9), // Slightly darker for depth
       appBar: AppBar(
-        title: const Text('Party Pricelist', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+        centerTitle: true,
+        title: Builder(builder: (context) {
+          final isMobile = MediaQuery.of(context).size.width < 600;
+          final activeShop = ref.watch(activeShopProvider);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Party Pricelist', 
+                style: TextStyle(
+                  fontWeight: FontWeight.w800, 
+                  color: AppColors.textPrimary,
+                  fontSize: isMobile ? 16 : 20,
+                )
+              ),
+              if (activeShop != null)
+                Text(
+                  activeShop.shopName,
+                  style: TextStyle(
+                    fontSize: isMobile ? 9 : 11, 
+                    fontWeight: FontWeight.bold, 
+                    color: AppColors.accent, 
+                    letterSpacing: 0.5
+                  ),
+                ),
+            ],
+          );
+        }),
         elevation: 0,
         backgroundColor: Colors.white,
-        centerTitle: true,
         actions: [
           if (_isLoadingPrices || _isSaving)
             const Center(
@@ -128,6 +155,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
             )
         ],
       ),
+      drawer: const AppDrawer(currentRoute: '/pricelist'),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),

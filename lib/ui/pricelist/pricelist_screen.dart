@@ -418,8 +418,8 @@ class _ProductPriceCard extends StatelessWidget {
                     ),
                   Text(productName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary)),
                   Container(
-                    margin: const EdgeInsets.only(top: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFFE0F2F1), // Very light teal/mint
                       borderRadius: BorderRadius.circular(8),
@@ -428,13 +428,13 @@ class _ProductPriceCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.info_outline, size: 10, color: Color(0xFF00796B)),
+                        const Icon(Icons.info_outline, size: 9, color: Color(0xFF00796B)),
                         const SizedBox(width: 4),
                         Text(
                           'BASE RATE: ₹$defaultRate', 
                           style: const TextStyle(
                             color: Color(0xFF00796B), 
-                            fontSize: 10, 
+                            fontSize: 9, 
                             fontWeight: FontWeight.w900, 
                             letterSpacing: 0.5
                           )

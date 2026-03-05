@@ -334,6 +334,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
+        leading: const BackButton(),
         elevation: 0,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,

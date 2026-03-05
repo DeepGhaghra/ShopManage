@@ -56,6 +56,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
+        leading: const BackButton(color: AppColors.textPrimary),
         title: Builder(builder: (context) {
           return Column(
             mainAxisSize: MainAxisSize.min,

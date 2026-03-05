@@ -87,6 +87,7 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
+        leading: const BackButton(color: AppColors.textPrimary),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,

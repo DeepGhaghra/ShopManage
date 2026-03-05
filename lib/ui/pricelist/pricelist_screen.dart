@@ -115,6 +115,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9), // Slightly darker for depth
       appBar: AppBar(
+        leading: const BackButton(color: AppColors.textPrimary),
         centerTitle: true,
         title: Builder(builder: (context) {
           final isMobile = MediaQuery.of(context).size.width < 600;

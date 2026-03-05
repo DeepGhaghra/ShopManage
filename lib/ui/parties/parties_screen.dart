@@ -35,6 +35,7 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        leading: const BackButton(color: AppColors.textPrimary),
         backgroundColor: Colors.white,
         elevation: 0,
         title: Builder(builder: (context) {

@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // ─── Log Level ──────────────────────────────────────────────────────────────
 enum LogLevel { info, success, warning, error }
@@ -32,12 +34,17 @@ class LogEntry {
     if (details != null) 'details': details,
   };
 
-  factory LogEntry.fromJson(Map<String, dynamic> json) => LogEntry(
-    level: LogLevel.values.firstWhere((e) => e.name == json['level'], orElse: () => LogLevel.info),
-    module: json['module'] ?? '',
-    message: json['message'] ?? '',
-    details: json['details'],
-  );
+  factory LogEntry.fromJson(Map<String, dynamic> json) {
+    return LogEntry(
+      level: LogLevel.values.firstWhere(
+        (e) => e.name == json['level'],
+        orElse: () => LogLevel.info,
+      ),
+      module: (json['module'] as String?) ?? 'Unknown',
+      message: (json['message'] as String?) ?? '',
+      details: json['details']?.toString(),
+    );
+  }
 
   String get formattedTime => DateFormat('HH:mm:ss').format(timestamp);
   String get formattedDate => DateFormat('dd MMM yyyy').format(timestamp);
@@ -54,6 +61,8 @@ class LogService {
   File? _logFile;
   bool _initialized = false;
 
+  bool get _shouldPrint => kDebugMode && dotenv.env['APP_DEBUG'] == 'true';
+
   UnmodifiableListView<LogEntry> get logs => UnmodifiableListView(_logs);
 
   int get totalCount => _logs.length;
@@ -69,12 +78,12 @@ class LogService {
     if (!kIsWeb) {
       try {
         final dir = await getApplicationDocumentsDirectory();
-        final logDir = Directory('${dir.path}/ShopManage/logs');
+        final logDir = Directory(p.join(dir.path, 'ShopManage', 'logs'));
         if (!await logDir.exists()) {
           await logDir.create(recursive: true);
         }
         final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-        _logFile = File('${logDir.path}/app_log_$today.txt');
+        _logFile = File(p.join(logDir.path, 'app_log_$today.txt'));
         
         // Load existing logs from today's file
         if (await _logFile!.exists()) {
@@ -83,15 +92,19 @@ class LogService {
           final start = lines.length > 200 ? lines.length - 200 : 0;
           for (int i = start; i < lines.length; i++) {
             try {
-              final json = jsonDecode(lines[i]);
-              _logs.add(LogEntry.fromJson(json));
-            } catch (_) {}
+              final decoded = jsonDecode(lines[i]);
+              if (decoded is Map<String, dynamic>) {
+                _logs.add(LogEntry.fromJson(decoded));
+              }
+            } catch (_) {
+              // Ignore corrupted lines
+            }
           }
         }
         
         _log(LogLevel.info, 'System', 'Log service initialized. File: ${_logFile!.path}');
       } catch (e) {
-        if (kDebugMode) debugPrint('LogService init error: $e');
+        if (_shouldPrint) debugPrint('LogService init error: $e');
         _log(LogLevel.warning, 'System', 'File logging unavailable, using in-memory only', e.toString());
       }
     } else {
@@ -112,12 +125,12 @@ class LogService {
     // Write to file (non-blocking)
     if (_logFile != null && !kIsWeb) {
       _logFile!.writeAsString('${jsonEncode(entry.toJson())}\n', mode: FileMode.append).catchError((e) {
-        if (kDebugMode) debugPrint('Log write error: $e');
+        if (_shouldPrint) debugPrint('Log write error: $e');
       });
     }
 
     // Also print in debug mode
-    if (kDebugMode) {
+    if (_shouldPrint) {
       debugPrint(entry.toString());
     }
   }

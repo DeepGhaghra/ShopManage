@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' as xl;
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
 import '../../services/purchase_providers.dart';
 import '../../services/party_providers.dart';
 import '../../services/stock_providers.dart';
@@ -220,13 +221,12 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       );
 
       if (outputFile != null) {
-        final file = File(outputFile);
-        if (!await file.exists()) {
-           await file.writeAsBytes(fileBytes);
-        }
+        // Path normalization for consistency and security
+        final normalizedPath = p.normalize(outputFile);
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Template saved: $outputFile'),
+            content: Text('Template saved: $normalizedPath'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

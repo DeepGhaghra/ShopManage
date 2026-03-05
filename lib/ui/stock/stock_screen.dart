@@ -56,7 +56,19 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        leading: const BackButton(color: AppColors.textPrimary),
+        leadingWidth: 96,
+        leading: Builder(builder: (context) {
+          return Row(
+            children: [
+              const BackButton(color: AppColors.textPrimary),
+              IconButton(
+                icon: const Icon(Icons.menu, color: AppColors.primary),
+                tooltip: 'Menu',
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ],
+          );
+        }),
         title: Builder(builder: (context) {
           return Column(
             mainAxisSize: MainAxisSize.min,

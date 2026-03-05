@@ -334,7 +334,19 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
-        leading: const BackButton(),
+        leadingWidth: 96,
+        leading: Builder(builder: (context) {
+          return Row(
+            children: [
+              const BackButton(color: AppColors.textPrimary),
+              IconButton(
+                icon: const Icon(Icons.menu, color: AppColors.primary),
+                tooltip: 'Menu',
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ],
+          );
+        }),
         elevation: 0,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,

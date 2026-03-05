@@ -976,7 +976,19 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     return Scaffold(
       backgroundColor: _editingInvoiceNo != null ? const Color(0xFFF1F5F9) : AppColors.scaffoldBg, // Light slate in edit mode
       appBar: AppBar(
-        leading: const BackButton(),
+        leadingWidth: 96,
+        leading: Builder(builder: (context) {
+          return Row(
+            children: [
+              const BackButton(color: AppColors.textPrimary),
+              IconButton(
+                icon: const Icon(Icons.menu, color: AppColors.primary),
+                tooltip: 'Menu',
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ],
+          );
+        }),
         elevation: 0,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,

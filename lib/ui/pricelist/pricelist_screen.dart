@@ -115,7 +115,19 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9), // Slightly darker for depth
       appBar: AppBar(
-        leading: const BackButton(color: AppColors.textPrimary),
+        leadingWidth: 96,
+        leading: Builder(builder: (context) {
+          return Row(
+            children: [
+              const BackButton(color: AppColors.textPrimary),
+              IconButton(
+                icon: const Icon(Icons.menu, color: AppColors.primary),
+                tooltip: 'Menu',
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ],
+          );
+        }),
         centerTitle: true,
         title: Builder(builder: (context) {
           final isMobile = MediaQuery.of(context).size.width < 600;
@@ -153,7 +165,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                 padding: EdgeInsets.only(right: 16.0),
                 child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
               ),
-            )
+            ),
         ],
       ),
       drawer: const AppDrawer(currentRoute: '/pricelist'),

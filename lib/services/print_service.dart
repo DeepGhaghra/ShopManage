@@ -53,13 +53,7 @@ class PrintService {
         const double dataSize   = 8.5;
         const double smallSize  = 7.5;
         
-        // Table Rows calculation for 13.5cm height
-        const int totalRows = 10; 
-        final int filledRows = lines.length;
-        final int emptyRows = (totalRows - filledRows).clamp(0, totalRows);
-        final int totalQty = lines.fold(0, (sum, l) => sum + l.quantity);
-
-        // Column Widths
+        // Column Widths for 10.5cm
         const double colSrNo  = 22.0;
         const double colBrand = 60.0;
         const double colLoc   = 45.0;
@@ -69,12 +63,14 @@ class PrintService {
         const margin = pw.EdgeInsets.all(10);
         const double borderWidth = 0.8;
 
+        // ── Styles ──
         final heavyBorder = pw.BoxDecoration(border: pw.Border.all(color: PdfColors.black, width: borderWidth));
         final rightLine = pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(width: borderWidth, color: PdfColors.black)));
         pw.TextStyle cellStyle({pw.Font? f, double? size, PdfColor? color}) =>
             pw.TextStyle(font: f ?? font, fontSize: size ?? dataSize, color: color);
 
-        pw.Widget buildDataCell(String text, {pw.Font? f, bool isBold = false, pw.Alignment align = pw.Alignment.centerLeft, bool showBottomBorder = false}) {
+        // ── Builders ──
+        pw.Widget buildDataCell(String text, {pw.Font? f, bool isBold = false, pw.Alignment align = pw.Alignment.centerLeft}) {
           return pw.Container(
             constraints: const pw.BoxConstraints(minHeight: 20),
             padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 3),
@@ -89,159 +85,182 @@ class PrintService {
           );
         }
 
-        // ── Page Build ──
-        pdf.addPage(
-          pw.Page(
-            pageFormat: challanFormat,
-            margin: margin,
-            build: (context) {
-              return pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-                children: [
-                  pw.Container(
-                    decoration: heavyBorder,
-                    child: pw.Column(
-                      children: [
-                        // 1. Header
-                        pw.Container(
-                          padding: const pw.EdgeInsets.only(top: 10, bottom: 4),
-                          child: pw.Column(
-                            children: [
-                              pw.Text((shop.shopShortName ?? shop.shopName).toUpperCase(),
-                                  style: cellStyle(f: fontBold, size: shopSize)
-                              ),
-                              pw.SizedBox(height: 1),
-                              pw.Text('ESTIMATE', style: cellStyle(f: fontBold, size: 8.0)),
-                            ],
-                          ),
-                        ),
+        // ── CHUNKING LOGIC FOR MULTI-PAGE ──
+        const int rowsPerPage = 10;
+        final int numPages = (lines.length / rowsPerPage).ceil() == 0 ? 1 : (lines.length / rowsPerPage).ceil();
+        final int totalQty = lines.fold(0, (sum, l) => sum + l.quantity);
 
-                        // 2. Customer Details
-                        pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          child: pw.Row(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: [
-                              pw.Expanded(
-                                child: pw.Column(
-                                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                  children: [
-                                    pw.Text('M/s: ${party.partyName.toUpperCase()}',
-                                      style: cellStyle(f: fontBold, size: headerSize),
-                                    ),
-                                    pw.SizedBox(height: 2),
-                                    pw.Text('Mobile: ${party.mobile ?? ''}', style: cellStyle(size: smallSize)),
-                                  ],
-                                ),
-                              ),
-                              pw.SizedBox(width: 5),
-                              pw.SizedBox(
-                                width: 72,
-                                child: pw.Column(
-                                  crossAxisAlignment: pw.CrossAxisAlignment.end,
-                                  children: [
-                                    pw.Text('Date: $dateStr', style: cellStyle(f: fontBold, size: headerSize)),
-                                    pw.SizedBox(height: 2),
-                                    pw.Text('City: ${party.city ?? ''}', style: cellStyle(size: smallSize)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        // 3. Table
-                        pw.Table(
-                          border: pw.TableBorder(
-                            verticalInside: pw.BorderSide(width: borderWidth, color: PdfColors.black),
-                            top: pw.BorderSide(width: borderWidth, color: PdfColors.black), 
-                          ),
-                          columnWidths: {
-                            0: pw.FixedColumnWidth(colSrNo),
-                            1: pw.FixedColumnWidth(colBrand),
-                            2: pw.FixedColumnWidth(colLoc),
-                            3: pw.FlexColumnWidth(1),
-                            4: pw.FixedColumnWidth(colQty),
-                            5: pw.FixedColumnWidth(colNotes),
-                          },
-                          children: [
-                            pw.TableRow(
+        for (int p = 0; p < numPages; p++) {
+          final bool isLastPage = (p == numPages - 1);
+          final int start = p * rowsPerPage;
+          final int end = (start + rowsPerPage < lines.length) ? (start + rowsPerPage) : lines.length;
+          final pageLines = lines.sublist(start, end);
+          final int filledRows = pageLines.length;
+          final int emptyRows = rowsPerPage - filledRows;
+
+          pdf.addPage(
+            pw.Page(
+              pageFormat: challanFormat,
+              margin: margin,
+              build: (context) {
+                return pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                  children: [
+                    pw.Container(
+                      decoration: heavyBorder,
+                      child: pw.Column(
+                        children: [
+                          // 1. Header (Repeat on every page)
+                          pw.Container(
+                            padding: const pw.EdgeInsets.only(top: 10, bottom: 4),
+                            child: pw.Column(
                               children: [
-                                for (var h in ['Sr', 'Brand', 'Loc', 'Design No.', 'Qty', ' '])
-                                  pw.Container(
-                                    decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: borderWidth))),
-                                    padding: const pw.EdgeInsets.symmetric(vertical: 3),
-                                    constraints: const pw.BoxConstraints(minHeight: 18),
-                                    alignment: pw.Alignment.center,
-                                    child: pw.Text(h, style: cellStyle(f: fontBold, size: headerSize)),
-                                  ),
+                                pw.Text((shop.shopShortName ?? shop.shopName).toUpperCase(),
+                                    style: cellStyle(f: fontBold, size: shopSize)
+                                ),
+                                pw.SizedBox(height: 1),
+                                pw.Text('ESTIMATE ${numPages > 1 ? "(Page ${p + 1}/$numPages)" : ""}', style: cellStyle(f: fontBold, size: 8.0)),
                               ],
                             ),
-                            for (int i = 0; i < filledRows; i++)
-                              pw.TableRow(
-                                children: [
-                                  buildDataCell('${i + 1}', align: pw.Alignment.center),
-                                  buildDataCell(lines[i].brandName, align: pw.Alignment.center),
-                                  buildDataCell(lines[i].locationName, align: pw.Alignment.center),
-                                  buildDataCell(lines[i].designNo, align: pw.Alignment.center),
-                                  buildDataCell(lines[i].quantity.toString(), align: pw.Alignment.center),
-                                  buildDataCell(''),
-                                ]
-                              ),
-                            for (int i = 0; i < emptyRows; i++) buildEmptyRow(),
-                          ],
-                        ),
-
-                        // 4. Total
-                        pw.Container(
-                          decoration: pw.BoxDecoration(
-                            border: pw.Border(top: pw.BorderSide(width: borderWidth, color: PdfColors.black)),
                           ),
-                          child: pw.Row(
-                            children: [
-                              pw.Expanded(
-                                child: pw.Container(
-                                  padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                  alignment: pw.Alignment.centerRight,
-                                  decoration: rightLine, 
-                                  child: pw.Text('Total', style: cellStyle(f: fontBold, size: headerSize)),
-                                ),
-                              ),
-                              pw.Container(
-                                width: colQty,
-                                padding: const pw.EdgeInsets.symmetric(vertical: 4),
-                                alignment: pw.Alignment.center,
-                                child: pw.Text(totalQty.toString(), style: cellStyle(f: fontBold, size: headerSize)),
-                              ),
-                              pw.SizedBox(width: colNotes),
-                            ]
-                          )
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  // 5. Minimal Transporter Line
-                  pw.Padding(
-                    padding: const pw.EdgeInsets.only(top: 10, left: 4),
-                    child: pw.Row(
-                      children: [
-                        pw.Text('Transporter Name: ', style: cellStyle(size: smallSize)),
-                        pw.Expanded(
-                          child: pw.Container(
-                            decoration: const pw.BoxDecoration(
-                              border: pw.Border(bottom: pw.BorderSide(width: 0.5, color: PdfColors.black))
+                          // 2. Customer Details (Repeat on every page)
+                          pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: pw.Row(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Expanded(
+                                  child: pw.Column(
+                                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                    children: [
+                                      pw.Text('M/s: ${party.partyName.toUpperCase()}',
+                                        style: cellStyle(f: fontBold, size: headerSize),
+                                      ),
+                                      pw.SizedBox(height: 2),
+                                      pw.Text('Mobile: ${party.mobile ?? ''}', style: cellStyle(size: smallSize)),
+                                    ],
+                                  ),
+                                ),
+                                pw.SizedBox(width: 5),
+                                pw.SizedBox(
+                                  width: 72,
+                                  child: pw.Column(
+                                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                                    children: [
+                                      pw.Text('Date: $dateStr', style: cellStyle(f: fontBold, size: headerSize)),
+                                      pw.SizedBox(height: 2),
+                                      pw.Text('City: ${party.city ?? ''}', style: cellStyle(size: smallSize)),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
+                          
+                          // 3. Table (Max 10 rows per page)
+                          pw.Table(
+                            border: pw.TableBorder(
+                              verticalInside: pw.BorderSide(width: borderWidth, color: PdfColors.black),
+                              top: pw.BorderSide(width: borderWidth, color: PdfColors.black), 
+                            ),
+                            columnWidths: {
+                              0: pw.FixedColumnWidth(colSrNo),
+                              1: pw.FixedColumnWidth(colBrand),
+                              2: pw.FixedColumnWidth(colLoc),
+                              3: pw.FlexColumnWidth(1),
+                              4: pw.FixedColumnWidth(colQty),
+                              5: pw.FixedColumnWidth(colNotes),
+                            },
+                            children: [
+                              pw.TableRow(
+                                children: [
+                                  for (var h in ['Sr', 'Brand', 'Loc', 'Design No.', 'Qty', ' '])
+                                    pw.Container(
+                                      decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(width: borderWidth))),
+                                      padding: const pw.EdgeInsets.symmetric(vertical: 3),
+                                      constraints: const pw.BoxConstraints(minHeight: 18),
+                                      alignment: pw.Alignment.center,
+                                      child: pw.Text(h, style: cellStyle(f: fontBold, size: headerSize)),
+                                    ),
+                                ],
+                              ),
+                              for (int i = 0; i < filledRows; i++)
+                                pw.TableRow(
+                                  children: [
+                                    buildDataCell('${start + i + 1}', align: pw.Alignment.center),
+                                    buildDataCell(pageLines[i].brandName, align: pw.Alignment.center),
+                                    buildDataCell(pageLines[i].locationName, align: pw.Alignment.center),
+                                    buildDataCell(pageLines[i].designNo, align: pw.Alignment.center),
+                                    buildDataCell(pageLines[i].quantity.toString(), align: pw.Alignment.center),
+                                    buildDataCell(''),
+                                  ]
+                                ),
+                              for (int i = 0; i < emptyRows; i++) buildEmptyRow(),
+                            ],
+                          ),
+
+                          // 4. Total (Only on Last Page)
+                          if (isLastPage)
+                            pw.Container(
+                              decoration: pw.BoxDecoration(
+                                border: pw.Border(top: pw.BorderSide(width: borderWidth, color: PdfColors.black)),
+                              ),
+                              child: pw.Row(
+                                children: [
+                                  pw.Expanded(
+                                    child: pw.Container(
+                                      padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                      alignment: pw.Alignment.centerRight,
+                                      decoration: rightLine, 
+                                      child: pw.Text('Total', style: cellStyle(f: fontBold, size: headerSize)),
+                                    ),
+                                  ),
+                                  pw.Container(
+                                    width: colQty,
+                                    padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                                    alignment: pw.Alignment.center,
+                                    child: pw.Text(totalQty.toString(), style: cellStyle(f: fontBold, size: headerSize)),
+                                  ),
+                                  pw.SizedBox(width: colNotes),
+                                ]
+                              )
+                            )
+                          else
+                            // Closure line for non-last pages
+                            pw.Container(
+                              height: 0,
+                              decoration: pw.BoxDecoration(
+                                border: pw.Border(top: pw.BorderSide(width: borderWidth, color: PdfColors.black)),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
+
+                    // 5. Minimal Transporter Line (Only on Last Page)
+                    if (isLastPage)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(top: 10, left: 4),
+                        child: pw.Row(
+                          children: [
+                            pw.Text('Transporter Name: ', style: cellStyle(size: smallSize)),
+                            pw.Expanded(
+                              child: pw.Container(
+                                decoration: const pw.BoxDecoration(
+                                  border: pw.Border(bottom: pw.BorderSide(width: 0.5, color: PdfColors.black))
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          );
+        }
         return pdf.save();
       }
     );

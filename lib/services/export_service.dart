@@ -6,12 +6,27 @@ import 'package:share_plus/share_plus.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:path/path.dart' as p;
 import 'core_providers.dart';
 
 class ExportService {
   final SupabaseClient _client;
 
   ExportService(this._client);
+
+  /// Sanitizes a string to be safe for use in file names.
+  /// Removes path separators, directory traversal sequences, and
+  /// any characters that aren't alphanumeric, underscore, or hyphen.
+  String _sanitizeFilename(String input) {
+    // Remove path separators and traversal sequences
+    String safe = input
+        .replaceAll(RegExp(r'[\\/]'), '_')  // Replace slashes
+        .replaceAll(RegExp(r'\.{2,}'), '_') // Replace .. sequences
+        .replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '_'); // Only safe chars
+    // Prevent empty filenames
+    if (safe.trim().isEmpty) safe = 'export';
+    return safe;
+  }
 
   Future<void> exportSalesToExcel(int shopId, String shopName) async {
     final response = await _client
@@ -64,7 +79,8 @@ class ExportService {
     }
 
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/Sales_Export_$shopName.xlsx');
+    final safeName = _sanitizeFilename(shopName);
+    final file = File(p.join(directory.path, 'Sales_Export_$safeName.xlsx'));
     await file.writeAsBytes(excel.save()!);
 
     await Share.shareXFiles([XFile(file.path)], text: 'Sales Export for $shopName');
@@ -108,7 +124,8 @@ class ExportService {
     }
 
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/Stock_Export_$shopName.xlsx');
+    final safeName = _sanitizeFilename(shopName);
+    final file = File(p.join(directory.path, 'Stock_Export_$safeName.xlsx'));
     await file.writeAsBytes(excel.save()!);
 
     await Share.shareXFiles([XFile(file.path)], text: 'Stock Export for $shopName');
@@ -155,7 +172,8 @@ class ExportService {
     }
 
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/Purchase_Export_$shopName.xlsx');
+    final safeName = _sanitizeFilename(shopName);
+    final file = File(p.join(directory.path, 'Purchase_Export_$safeName.xlsx'));
     await file.writeAsBytes(excel.save()!);
 
     await Share.shareXFiles([XFile(file.path)], text: 'Purchase Export for $shopName');
@@ -189,7 +207,9 @@ class ExportService {
     );
 
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/${title.replaceAll(' ', '_')}_$shopName.pdf');
+    final safeTitle = _sanitizeFilename(title);
+    final safeName = _sanitizeFilename(shopName);
+    final file = File(p.join(directory.path, '${safeTitle}_$safeName.pdf'));
     await file.writeAsBytes(await pdf.save());
 
     await Share.shareXFiles([XFile(file.path)], text: '$title PDF for $shopName');

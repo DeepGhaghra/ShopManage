@@ -91,7 +91,7 @@ class LogService {
         
         _log(LogLevel.info, 'System', 'Log service initialized. File: ${_logFile!.path}');
       } catch (e) {
-        debugPrint('LogService init error: $e');
+        if (kDebugMode) debugPrint('LogService init error: $e');
         _log(LogLevel.warning, 'System', 'File logging unavailable, using in-memory only', e.toString());
       }
     } else {
@@ -112,7 +112,7 @@ class LogService {
     // Write to file (non-blocking)
     if (_logFile != null && !kIsWeb) {
       _logFile!.writeAsString('${jsonEncode(entry.toJson())}\n', mode: FileMode.append).catchError((e) {
-        debugPrint('Log write error: $e');
+        if (kDebugMode) debugPrint('Log write error: $e');
       });
     }
 

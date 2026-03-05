@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'routing/router.dart';
 import 'theme/app_theme.dart';
@@ -10,12 +11,11 @@ import 'services/log_service.dart';
 import 'services/auth_listener.dart';
 import 'ui/common/offline_checklist_screen.dart';
 
-// Please replace these with environment variables in a real production app.
-const supabaseUrl = 'https://ltplvmmjgkaxffvwowub.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0cGx2bW1qZ2theGZmdndvd3ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwMDA3OTIsImV4cCI6MjA4NzU3Njc5Mn0.YnygSoUuv39fUKxTxc3Dzg-HUB1iB24ZBQm88KFnlnI';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables from .env file
+  await dotenv.load(fileName: ".env");
   
   // Initialize log service early
   final logService = LogService();
@@ -23,8 +23,8 @@ void main() async {
   logService.info('System', 'App boot started');
 
   await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
   logService.success('System', 'Supabase initialized successfully');
 

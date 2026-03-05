@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/error_translator.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
+import 'design_history_sheet.dart';
 
 class StockScreen extends ConsumerStatefulWidget {
   const StockScreen({super.key});
@@ -222,23 +223,44 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                       ),
                                       Expanded(
                                         flex: 2,
-                                        child: Container(
-                                          alignment: Alignment.centerRight,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: isLow ? Colors.orange.shade50 : Colors.green.shade50,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              qty.toString(),
-                                              style: TextStyle(
-                                                color: isLow ? Colors.orange.shade700 : Colors.green.shade700,
-                                                fontWeight: FontWeight.w900,
-                                                fontSize: 13,
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.end,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: isLow ? Colors.orange.shade50 : Colors.green.shade50,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                qty.toString(),
+                                                style: TextStyle(
+                                                  color: isLow ? Colors.orange.shade700 : Colors.green.shade700,
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 13,
+                                                ),
                                               ),
                                             ),
-                                          ),
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              icon: const Icon(Icons.history_rounded, size: 20),
+                                              color: AppColors.primary,
+                                              tooltip: 'View History',
+                                              onPressed: () {
+                                                showModalBottomSheet(
+                                                  context: context,
+                                                  isScrollControlled: true,
+                                                  backgroundColor: Colors.transparent,
+                                                  builder: (context) => DesignHistorySheet(
+                                                    designId: design['id'] as int,
+                                                    designNo: design['design_no']?.toString() ?? '-',
+                                                  ),
+                                                );
+                                              },
+                                              constraints: const BoxConstraints(),
+                                              padding: EdgeInsets.zero,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],

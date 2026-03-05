@@ -48,7 +48,7 @@ class LogEntry {
 
   String get formattedTime => DateFormat('HH:mm:ss').format(timestamp);
   String get formattedDate => DateFormat('dd MMM yyyy').format(timestamp);
-  String get fullFormatted => DateFormat('dd MMM yyyy HH:mm:ss').format(timestamp);
+  String get fullFormatted => DateFormat('dd MMM yyyy • HH:mm:ss').format(timestamp);
 
   @override
   String toString() => '[$fullFormatted] [${level.name.toUpperCase()}] [$module] $message${details != null ? '\n  → $details' : ''}';

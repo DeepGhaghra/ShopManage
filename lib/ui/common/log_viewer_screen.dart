@@ -239,7 +239,7 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
                                               ),
                                               const Spacer(),
                                               Text(
-                                                log.formattedTime,
+                                                log.fullFormatted,
                                                 style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
                                               ),
                                             ],

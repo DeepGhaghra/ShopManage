@@ -21,7 +21,8 @@ description: Manages product feature planning, backlog grooming, and requirement
 ## Modules & Features (PRD §5-§7)
 
 ### Admin Module
-- **Shop Management:** Add/Edit/Inactive Shops.
+- **Shop Management:** Add/Edit/Inactive Shops. 
+- **Shop Onboarding (Future):** Whenever a new shop is entered, automatically pre-populate it with default **locations** and **product designs** to ensure it's ready for immediate use.
 - **Folder Management:** Category layer for organizing product heads.
 - **Product Head Management:** Manage types like Sunmica, Texture, Acrylic.
 

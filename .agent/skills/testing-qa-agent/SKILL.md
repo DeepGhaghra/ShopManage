@@ -23,6 +23,7 @@ description: Designs and implements tests, QA checklists, and validation strateg
 - [ ] Mock the Supabase client to simulate multi-shop data
 - [ ] Write integration tests for the Shop Switching flow
 - [ ] Use the PRD-based checklists below for manual or automated verification
+- [ ] **Navigation Check:** Verify every sub-page has both Back and Menu icons on the left side (AppBar).
 
 ## Instructions
 

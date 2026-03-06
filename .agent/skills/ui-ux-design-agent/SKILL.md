@@ -19,10 +19,15 @@ description: Guides UI/UX design decisions for the Sales App Flutter project. Us
   - Minimal clicks workflow.
   - Responsive layout (optimized for Phone/Tablet).
 - **Core Components:** `SearchableDropdown`, `MetricCard`, `BaseScreen`.
+- **Navigation Standards (Sub-pages):** 
+  - Sub-pages (Sales, Purchase, Stock, etc.) must have BOTH a **Back Button** and a **Menu Icon** grouped together on the left side of the AppBar.
+  - This is implemented using `leadingWidth: 96` and a `Row` in the `leading` property.
+  - Root pages (Dashboard) only have the Hamburger Menu icon.
 
 ## Workflow
 
 - [ ] Identify the user role (Admin vs. Normal) to determine navigation options
+- [ ] For non-root screens, ensure `leadingWidth: 96` with Back + Menu icons
 - [ ] Design forms (Sales/Purchase) to minimize field-to-field transitions
 - [ ] Ensure all critical metrics on the Dashboard are clickable to view datasets
 - [ ] Use `SearchableDropdown` for entity selection to handle large data efficiently

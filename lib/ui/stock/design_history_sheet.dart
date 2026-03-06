@@ -92,7 +92,7 @@ class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
                 child: TextField(
                   onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
                   decoration: InputDecoration(
-                    hintText: 'Search Party, Location, or Type',
+                    hintText: 'Search... (try inv: loc: or date:)',
                     prefixIcon: const Icon(Icons.search_rounded),
                     filled: true,
                     fillColor: Colors.white,
@@ -116,10 +116,30 @@ class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
                 child: historyAsync.when(
                   data: (allItems) {
                     final items = allItems.where((item) {
-                      if (_searchQuery.isEmpty) return true;
-                      return item.partyName.toLowerCase().contains(_searchQuery) ||
-                             item.locationName.toLowerCase().contains(_searchQuery) ||
-                             item.type.name.toLowerCase().contains(_searchQuery);
+                      final query = _searchQuery.trim().toLowerCase();
+                      if (query.isEmpty) return true;
+                      
+                      final dateStr = DateFormat('dd MMM yy').format(item.date).toLowerCase();
+                      final idStr = (item.identifier ?? '').toLowerCase();
+                      final locStr = item.locationName.toLowerCase();
+                      final partyStr = item.partyName.toLowerCase();
+                      final typeStr = item.type.name.toLowerCase();
+                      
+                      // Advanced filters
+                      if (query.startsWith('inv:')) {
+                        return idStr.contains(query.substring(4).trim());
+                      } else if (query.startsWith('loc:')) {
+                        return locStr.contains(query.substring(4).trim());
+                      } else if (query.startsWith('date:')) {
+                        return dateStr.contains(query.substring(5).trim());
+                      }
+
+                      // Default: search across everything
+                      return partyStr.contains(query) ||
+                             locStr.contains(query) ||
+                             typeStr.contains(query) ||
+                             idStr.contains(query) ||
+                             dateStr.contains(query);
                     }).toList();
 
                     if (items.isEmpty) {
@@ -137,9 +157,9 @@ class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
 
                     return ListView.separated(
                       controller: scrollController,
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       itemCount: items.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final item = items[index];
                         
@@ -176,24 +196,24 @@ class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
                         return Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2))
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))
                             ],
                             border: Border.all(color: Colors.grey.shade100),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Icon Box
                                 Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
-                                  child: Icon(icon, color: color, size: 24),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
+                                  child: Icon(icon, color: color, size: 20),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 12),
                                 
                                 // Details
                                 Expanded(
@@ -205,18 +225,18 @@ class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
                                           Expanded(
                                             child: Text(
                                               item.partyName,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
                                             ),
                                           ),
                                           Text(
                                             displayQty,
-                                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: color),
+                                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: color),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 4),
                                       Wrap(
-                                        spacing: 8,
+                                        spacing: 6,
                                         runSpacing: 4,
                                         crossAxisAlignment: WrapCrossAlignment.center,
                                         children: [

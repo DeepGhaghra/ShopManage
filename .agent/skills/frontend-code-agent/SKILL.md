@@ -27,6 +27,22 @@ description: Implements Flutter UI screens and widgets for the Sales App project
 - [ ] Identify the module folder: `lib/ui/` or `lib/app/modules/`
 - [ ] Determine if the widget needs `Obx` for real-time stock/rate updates
 - [ ] Check if `SearchableDropdown` is required for Parties or Design numbers
+- [ ] For sub-pages, implement the combined leading `Row` (Back + Menu):
+  ```dart
+  appBar: AppBar(
+    leadingWidth: 96,
+    leading: Builder(builder: (context) => Row(
+      children: [
+        const BackButton(color: AppColors.textPrimary),
+        IconButton(
+          icon: const Icon(Icons.menu, color: AppColors.primary),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+      ],
+    )),
+    // ...
+  )
+  ```
 - [ ] Implement responsive layout (breakpoints for phone vs. tablet)
 - [ ] Add loading/empty/error states for data-heavy views (Stock/Sales List)
 - [ ] Verify form validation (e.g., qty > 0, party selected)

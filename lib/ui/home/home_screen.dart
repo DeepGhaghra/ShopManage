@@ -113,7 +113,7 @@ class HomeScreen extends ConsumerWidget {
         }),
         actions: [
           IconButton(
-            icon: const Icon(Icons.store),
+            icon: const Icon(Icons.store, color: AppColors.primary),
             onPressed: () {
               ref.read(activeShopProvider.notifier).setShop(null); // Clear shop to re-select
               ScaffoldMessenger.of(context).showSnackBar(
@@ -127,6 +127,11 @@ class HomeScreen extends ConsumerWidget {
               );
             },
             tooltip: 'Switch Shop',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
+            onPressed: () => _signOut(context),
+            tooltip: 'Sign Out',
           ),
         ],
       ),

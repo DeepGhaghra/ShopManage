@@ -210,7 +210,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     // Header
     sheet.appendRow([xl.TextCellValue('Design No'), xl.TextCellValue('Location'), xl.TextCellValue('Qty')]);
 
-    final fileBytes = excel.save();
+    final fileBytes = excel.encode();
     if (fileBytes == null) return;
 
     try {

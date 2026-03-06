@@ -10,6 +10,7 @@ import '../ui/parties/parties_screen.dart';
 import '../ui/purchase/purchase_screen.dart';
 import '../ui/pricelist/pricelist_screen.dart';
 import '../ui/common/log_viewer_screen.dart';
+import '../ui/export/export_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -60,6 +61,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/logs',
         builder: (context, state) => const LogViewerScreen(),
+      ),
+      GoRoute(
+        path: '/export',
+        builder: (context, state) => const ExportScreen(),
       ),
     ],
   );

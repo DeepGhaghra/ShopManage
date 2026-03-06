@@ -5,13 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../services/core_providers.dart';
 import '../../services/dashboard_providers.dart';
 import '../../models/shop.dart';
-import '../../services/export_service.dart';
-import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/error_view.dart';
 import '../common/confirmation_dialog.dart';
 import '../common/app_drawer.dart';
-import '../common/app_version_display.dart';
 import '../../utils/error_translator.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -293,16 +290,7 @@ class HomeScreen extends ConsumerWidget {
                             label: 'Export Data',
                             icon: Icons.import_export_rounded,
                             baseColor: const Color(0xFF6A1B9A),
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                ),
-                                builder: (context) => _ExportBottomSheet(shopId: activeShop.id, shopName: activeShop.shopName),
-                              );
-                            },
+                            onTap: () => context.push('/export'),
                           )
                         ],
                       );
@@ -362,103 +350,6 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _ExportBottomSheet extends ConsumerWidget {
-  final int shopId;
-  final String shopName;
-
-  const _ExportBottomSheet({required this.shopId, required this.shopName});
-
-  Widget _buildExportRow(BuildContext context, WidgetRef ref, String title, Future<void> Function() onExcel, Future<void> Function() onPdf) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-
-    final excelButton = TextButton.icon(
-      icon: const Icon(Icons.table_chart, color: Colors.green),
-      label: const Text('Excel'),
-      onPressed: () async {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Generating $title Excel...')));
-        try {
-          await onExcel();
-        } catch (e) {
-          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
-        }
-      },
-    );
-
-    final pdfButton = TextButton.icon(
-      icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-      label: const Text('PDF'),
-      onPressed: () async {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Generating $title PDF...')));
-        try {
-          await onPdf();
-        } catch (e) {
-          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
-        }
-      },
-    );
-
-    if (isMobile) {
-      return ListTile(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Row(
-          children: [
-            excelButton,
-            const SizedBox(width: 8),
-            pdfButton,
-          ],
-        ),
-      );
-    }
-
-    return ListTile(
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          excelButton,
-          const SizedBox(width: 8),
-          pdfButton,
-        ],
-      )
-    );
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final exportService = ref.read(exportServiceProvider);
-
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-           const Padding(
-             padding: EdgeInsets.all(16.0),
-             child: Text('Generate Reports', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-           ),
-           _buildExportRow(
-             context, ref, 'Sales Report', 
-             () => exportService.exportSalesToExcel(shopId, shopName), 
-             () => exportService.exportSalesToPdf(shopId, shopName)
-           ),
-           const Divider(),
-           _buildExportRow(
-             context, ref, 'Purchase Report', 
-             () => exportService.exportPurchaseToExcel(shopId, shopName), 
-             () => exportService.exportPurchaseToPdf(shopId, shopName)
-           ),
-           const Divider(),
-           _buildExportRow(
-             context, ref, 'Stock Report', 
-             () => exportService.exportStockToExcel(shopId, shopName), 
-             () => exportService.exportStockToPdf(shopId, shopName)
-           ),
-        ],
-      ),
-    );
-  }
-}
 
 class _MetricCard extends StatelessWidget {
   final String title;

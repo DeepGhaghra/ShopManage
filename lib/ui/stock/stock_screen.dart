@@ -974,13 +974,44 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
                 itemCount: options.length,
                 itemBuilder: (context, index) {
                   final option = options.elementAt(index);
+                  final label = displayStringForOption(option);
+                  
+                  String? subLabel;
+                  if (option is Map<String, dynamic>) {
+                    final ph = option['product_head'];
+                    Map<String, dynamic>? phData;
+                    if (ph is Map) phData = ph as Map<String, dynamic>;
+                    else if (ph is List && ph.isNotEmpty) phData = ph.first as Map<String, dynamic>;
+                    
+                    if (phData != null) {
+                      final name = phData['product_name']?.toString() ?? '';
+                      final folder = phData['folders'];
+                      Map<String, dynamic>? folderData;
+                      if (folder is Map) folderData = folder as Map<String, dynamic>;
+                      else if (folder is List && folder.isNotEmpty) folderData = folder.first as Map<String, dynamic>;
+                      
+                      final brand = folderData?['folder_name']?.toString() ?? '';
+                      subLabel = brand.isNotEmpty ? '$name ($brand)' : name;
+                    }
+                  }
+
                   return InkWell(
                     onTap: () => onSelected(option),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Text(
-                        displayStringForOption(option),
-                        style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blueGrey.shade800),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            label,
+                            style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.textPrimary, fontSize: 13),
+                          ),
+                          if (subLabel != null && subLabel.isNotEmpty)
+                            Text(
+                              subLabel.toUpperCase(),
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary, fontSize: 9, letterSpacing: 0.5),
+                            ),
+                        ],
                       ),
                     ),
                   );
@@ -1023,7 +1054,7 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final designsAsync = ref.watch(designsProvider);
+    final stockAsync = ref.watch(shopStockProvider);
     final locationsAsync = ref.watch(locationsProvider);
 
     return Dialog(
@@ -1074,30 +1105,51 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
                   const SizedBox(height: 28),
 
                   _sectionHeader('1. SELECT DESIGN'),
-                  designsAsync.when(
-                    data: (designs) => _buildAutocomplete<Map<String, dynamic>>(
-                      label: 'Design Number',
-                      icon: Icons.tag_rounded,
-                      initialValue: null,
-                      suggestions: (query) {
-                        return designs.where((d) => (d['design_no'] as String).toLowerCase().contains(query.toLowerCase())).take(10);
-                      },
-                      onSelected: (design) {
-                        setState(() {
-                          _selectedDesign = design;
-                        });
-                        _fetchAvailableLocations(design['id'] as int);
-                      },
-                      displayStringForOption: (design) {
-                        return design['design_no'] as String;
-                      },
-                      fieldViewBuilderCustom: (context, controller, focusNode, onFieldSubmitted) {
-                        return TextFormField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          decoration: _inputDecoration('Design Number', Icons.tag_rounded).copyWith(
-                            suffixIcon: _selectedDesign != null
-                                ? IconButton(
+                  stockAsync.when(
+                    data: (stockItems) {
+                      // Extract unique designs that have stock
+                      final designsMap = <int, Map<String, dynamic>>{};
+                      for (var item in stockItems) {
+                        final design = item['products_design'] as Map<String, dynamic>?;
+                        if (design != null) {
+                          designsMap[design['id'] as int] = design;
+                        }
+                      }
+                      
+                      final availableDesigns = designsMap.values.toList();
+                      // Sort A-Z explicitly
+                      availableDesigns.sort((a, b) {
+                        final da = (a['design_no']?.toString() ?? '').toUpperCase();
+                        final db = (b['design_no']?.toString() ?? '').toUpperCase();
+                        return da.compareTo(db);
+                      });
+
+                      return _buildAutocomplete<Map<String, dynamic>>(
+                        label: 'Design Number',
+                        icon: Icons.tag_rounded,
+                        initialValue: null,
+                        suggestions: (query) {
+                          if (query.isEmpty) return availableDesigns.take(15);
+                          return availableDesigns
+                              .where((d) => (d['design_no']?.toString() ?? '').toLowerCase().contains(query.toLowerCase()))
+                              .take(15);
+                        },
+                        onSelected: (design) {
+                          setState(() {
+                            _selectedDesign = design;
+                          });
+                          _fetchAvailableLocations(design['id'] as int);
+                        },
+                        displayStringForOption: (design) {
+                          return design['design_no']?.toString() ?? '-';
+                        },
+                        fieldViewBuilderCustom: (context, controller, focusNode, onFieldSubmitted) {
+                          return TextFormField(
+                            controller: controller,
+                            focusNode: focusNode,
+                            decoration: _inputDecoration('Design Number', Icons.tag_rounded).copyWith(
+                              suffixIcon: _selectedDesign != null
+                                  ? IconButton(
                                     icon: const Icon(Icons.close_rounded, size: 20, color: Colors.grey),
                                     onPressed: () {
                                       controller.clear();
@@ -1117,7 +1169,8 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
                           onFieldSubmitted: (String value) => onFieldSubmitted(),
                         );
                       },
-                    ),
+                    );
+                    },
                     loading: () => const LinearProgressIndicator(color: Colors.orange),
                     error: (e, _) => Text('Error loading: $e'),
                   ),

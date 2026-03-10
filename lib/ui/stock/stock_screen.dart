@@ -410,7 +410,7 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
   final _formKey = GlobalKey<FormState>();
   final _designController = TextEditingController();
 
-  int? _selectedProductHeadId;
+  ProductHead? _selectedProductHead;
   int? _selectedLocationId;
   String? _selectedLocationName;
   int _quantity = 1;
@@ -676,12 +676,42 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
                       icon: Icons.account_tree_rounded,
                       initialValue: null,
                       suggestions: (query) => heads.where((h) => h.productName.toLowerCase().contains(query.toLowerCase())),
-                      onSelected: (head) => setState(() => _selectedProductHeadId = head.id),
+                      onSelected: (head) => setState(() => _selectedProductHead = head),
                       displayStringForOption: (head) => head.productName,
                     ),
                     loading: () => const LinearProgressIndicator(),
                     error: (e, _) => Text('Error loading: $e'),
                   ),
+                  
+                  if (_selectedProductHead != null) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.payments_outlined, size: 10, color: Colors.green.shade700),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Rate: ₹${_selectedProductHead!.productRate}',
+                              style: TextStyle(
+                                color: Colors.green.shade800,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
 
                   // Stock Placement
@@ -755,7 +785,7 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
 
   Future<void> _submit() async {
     setState(() => _isSaving = true);
-    if (!_formKey.currentState!.validate() || _selectedProductHeadId == null || _selectedLocationId == null) {
+    if (!_formKey.currentState!.validate() || _selectedProductHead == null || _selectedLocationId == null) {
       if (mounted) setState(() => _isSaving = false);
       return;
     }
@@ -773,7 +803,7 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
       await ref.read(stockRepositoryProvider).addStock(
         shopId: activeShop.id,
         designNo: _designController.text.trim(),
-        productHeadId: _selectedProductHeadId!,
+        productHeadId: _selectedProductHead!.id,
         locationId: _selectedLocationId!,
         quantity: _quantity,
       );

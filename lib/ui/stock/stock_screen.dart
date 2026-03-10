@@ -54,7 +54,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
         leading: const BackButton(color: AppColors.textPrimary),
         title: Column(
@@ -146,7 +146,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                 borderSide: BorderSide.none,
                               ),
                               filled: true,
-                              fillColor: const Color(0xFFF8FAFC),
+                              fillColor: AppColors.scaffoldBg,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             ),
                           ),
@@ -168,7 +168,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                             
                             final countText = Text(
                               '${filteredList.length} Items',
-                              style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 11, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
                             );
 
                             return SingleChildScrollView(
@@ -196,16 +196,16 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 850),
                         child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1.5)),
+                          decoration: const BoxDecoration(
+                            color: AppColors.scaffoldBg,
+                            border: Border(bottom: BorderSide(color: AppColors.divider, width: 1.5)),
                           ),
                           padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 10),
                           child: Row(
                             children: [
-                              Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.blueGrey.shade700, letterSpacing: 1))),
-                              Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.blueGrey.shade700, letterSpacing: 1))),
-                              Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.blueGrey.shade700, letterSpacing: 1))),
+                              Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: AppColors.textSecondary, letterSpacing: 1))),
+                              Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: AppColors.textSecondary, letterSpacing: 1))),
+                              Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: AppColors.textSecondary, letterSpacing: 1))),
                               const SizedBox(width: 44), // Space for history button
                             ],
                           ),
@@ -243,9 +243,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                               constraints: const BoxConstraints(maxWidth: 850),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: AppColors.cardBg,
                                   borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(16)) : null,
-                                  border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+                                  border: const Border(bottom: BorderSide(color: AppColors.divider)),
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 child: Row(
@@ -262,12 +262,12 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                       flex: 3,
                                       child: Row(
                                         children: [
-                                          Icon(Icons.location_on_outlined, size: 10, color: Colors.grey.shade600),
+                                          const Icon(Icons.location_on_outlined, size: 10, color: AppColors.textHint),
                                           const SizedBox(width: 2),
                                           Flexible(
                                             child: Text(
                                               location['name']?.toString() ?? 'Warehouse',
-                                              style: TextStyle(color: Colors.grey.shade800, fontSize: 11, fontWeight: FontWeight.w700),
+                                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w700),
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
@@ -288,7 +288,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                             child: Text(
                                               qty.toString(),
                                               style: TextStyle(
-                                                color: isLow ? Colors.orange.shade800 : Colors.green.shade900,
+                                                color: isLow ? AppColors.warning : AppColors.success,
                                                 fontWeight: FontWeight.w900,
                                                 fontSize: 12,
                                               ),

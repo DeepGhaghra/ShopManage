@@ -113,7 +113,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
     final productsAsync = ref.watch(productHeadsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // Slightly darker for depth
+      backgroundColor: AppColors.scaffoldBg, // Slightly darker for depth
       appBar: AppBar(
         leadingWidth: 96,
         leading: Builder(builder: (context) {
@@ -171,11 +171,11 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
               // ── Selection Header ─────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+                  decoration: const BoxDecoration(
+                    color: AppColors.cardBg,
+                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 4)),
+                      BoxShadow(color: Colors.black26, blurRadius: 15, offset: Offset(0, 4)),
                     ],
                   ),
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -184,7 +184,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                     children: [
                       Text(
                         'SELECT PARTY', 
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade300, letterSpacing: 1.2)
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textHint, letterSpacing: 1.2)
                       ),
                       const SizedBox(height: 12),
                       partiesAsync.when(
@@ -212,7 +212,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
                                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
                                 filled: true,
-                                fillColor: const Color(0xFFF8FAFC),
+                                fillColor: AppColors.scaffoldBg,
                                 suffixIcon: _selectedParty != null ? IconButton(
                                   icon: const Icon(Icons.cancel, color: Colors.grey, size: 18),
                                   onPressed: () {
@@ -241,11 +241,11 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                 pinned: true,
                 delegate: _SliverSearchDelegate(
                   child: Container(
-                    color: const Color(0xFFF1F5F9), // Match bg to blend
+                    color: AppColors.scaffoldBg, // Match bg to blend
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.cardBg,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2)),
@@ -259,7 +259,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                           prefixIcon: const Icon(Icons.search, size: 18),
                           isDense: true,
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.cardBg,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -429,19 +429,19 @@ class _ProductPriceCard extends StatelessWidget {
                     margin: const EdgeInsets.only(top: 4),
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2F1), // Very light teal/mint
+                      color: AppColors.success.withOpacity(0.1), // Very light teal/mint
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF4DB6AC), width: 1), // Distinct teal border
+                      border: Border.all(color: AppColors.success, width: 1), // Distinct teal border
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.info_outline, size: 9, color: Color(0xFF00796B)),
+                        const Icon(Icons.info_outline, size: 9, color: AppColors.success),
                         const SizedBox(width: 4),
                         Text(
                           'BASE RATE: ₹$defaultRate', 
                           style: const TextStyle(
-                            color: Color(0xFF00796B), 
+                            color: AppColors.success, 
                             fontSize: 9, 
                             fontWeight: FontWeight.w900, 
                             letterSpacing: 0.5
@@ -467,7 +467,7 @@ class _ProductPriceCard extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 15,
-                      color: isDirty ? AppColors.success : (isModified ? AppColors.primary : Colors.blueGrey.shade900),
+                      color: isDirty ? AppColors.success : (isModified ? AppColors.primary : AppColors.textPrimary),
                     ),
                     onFieldSubmitted: (_) => onSave(),
                     decoration: InputDecoration(
@@ -475,7 +475,7 @@ class _ProductPriceCard extends StatelessWidget {
                       prefixStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.normal, fontSize: 13),
                       isDense: true,
                       filled: true,
-                      fillColor: isDirty ? AppColors.success.withValues(alpha: 0.05) : (isModified ? AppColors.primary.withAlpha(5) : const Color(0xFFF8FAFC)),
+                      fillColor: isDirty ? AppColors.success.withOpacity(0.05) : (isModified ? AppColors.primary.withOpacity(0.05) : AppColors.scaffoldBg),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: isDirty ? const BorderSide(color: AppColors.success, width: 1) : BorderSide.none),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: isDirty ? const BorderSide(color: AppColors.success, width: 1) : BorderSide.none),

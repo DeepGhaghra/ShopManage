@@ -248,7 +248,7 @@ class HomeScreen extends ConsumerWidget {
                         childAspectRatio = 1.05;
                       } else {
                         crossAxisCount = 2;
-                        childAspectRatio = 1.1; 
+                        childAspectRatio = 1.5; 
                       }
 
                       return GridView.count(

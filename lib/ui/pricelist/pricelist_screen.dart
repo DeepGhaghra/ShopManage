@@ -163,7 +163,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
       drawer: const AppDrawer(currentRoute: '/pricelist'),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
+          constraints: const BoxConstraints(maxWidth: 850),
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -296,7 +296,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                   }
 
                   return SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {

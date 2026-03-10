@@ -192,18 +192,24 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _StockHeaderDelegate(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1.5)),
-                      ),
-                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 36, vertical: 10),
-                      child: Row(
-                        children: [
-                          Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.grey, letterSpacing: 1))),
-                          Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.grey, letterSpacing: 1))),
-                          Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.grey, letterSpacing: 1))),
-                        ],
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 850),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1.5)),
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 10),
+                          child: Row(
+                            children: [
+                              Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.blueGrey.shade700, letterSpacing: 1))),
+                              Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.blueGrey.shade700, letterSpacing: 1))),
+                              Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.blueGrey.shade700, letterSpacing: 1))),
+                              const SizedBox(width: 44), // Space for history button
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -232,74 +238,87 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                           final isLow = qty < 10;
                           final isLast = index == filteredList.length - 1;
 
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(16)) : null,
-                              border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    design['design_no']?.toString() ?? '-',
-                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textPrimary),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                          return Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 850),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(16)) : null,
+                                  border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
                                 ),
-                                Expanded(
-                                  flex: 3,
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.location_on_outlined, size: 10, color: Colors.grey.shade400),
-                                      const SizedBox(width: 2),
-                                      Flexible(
-                                        child: Text(
-                                          location['name']?.toString() ?? 'Warehouse',
-                                          style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w500),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        design['design_no']?.toString() ?? '-',
+                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textPrimary),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isLow ? Colors.orange.shade50 : Colors.green.shade50,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    qty.toString(),
-                                    style: TextStyle(
-                                      color: isLow ? Colors.orange.shade700 : Colors.green.shade700,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 12,
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                IconButton(
-                                  icon: const Icon(Icons.history_rounded, size: 18),
-                                  color: AppColors.primary,
-                                  tooltip: 'View History',
-                                  onPressed: () {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) => DesignHistorySheet(
-                                        designId: design['id'] as int,
-                                        designNo: design['design_no']?.toString() ?? '-',
+                                    Expanded(
+                                      flex: 3,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.location_on_outlined, size: 10, color: Colors.grey.shade600),
+                                          const SizedBox(width: 2),
+                                          Flexible(
+                                            child: Text(
+                                              location['name']?.toString() ?? 'Warehouse',
+                                              style: TextStyle(color: Colors.grey.shade800, fontSize: 11, fontWeight: FontWeight.w700),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    );
-                                  },
-                                  constraints: const BoxConstraints(),
-                                  padding: EdgeInsets.zero,
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: isLow ? Colors.orange.shade50 : Colors.green.shade50,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              qty.toString(),
+                                              style: TextStyle(
+                                                color: isLow ? Colors.orange.shade800 : Colors.green.shade900,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: const Icon(Icons.history_rounded, size: 18),
+                                      color: AppColors.primary,
+                                      tooltip: 'View History',
+                                      onPressed: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (context) => DesignHistorySheet(
+                                            designId: design['id'] as int,
+                                            designNo: design['design_no']?.toString() ?? '-',
+                                          ),
+                                        );
+                                      },
+                                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           );
                         },

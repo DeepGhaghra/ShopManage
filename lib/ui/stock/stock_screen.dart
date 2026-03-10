@@ -110,11 +110,11 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                 SliverToBoxAdapter(
                   child: RepaintBoundary(
                     child: Container(
-                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      padding: const EdgeInsets.all(20),
+                      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.04),
@@ -140,18 +140,18 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                     },
                                   )
                                 : null,
+                              isDense: true,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
                               filled: true,
                               fillColor: const Color(0xFFF8FAFC),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           Builder(builder: (context) {
-                            final isMobile = MediaQuery.of(context).size.width < 600;
                             final chips = [
                               _FilterChip(
                                 label: 'Design NO',
@@ -168,18 +168,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                             
                             final countText = Text(
                               '${filteredList.length} Items',
-                              style: TextStyle(color: Colors.blueGrey.shade300, fontSize: 11, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 11, fontWeight: FontWeight.bold),
                             );
-
-                            if (isMobile) {
-                              return Column(
-                                children: [
-                                  Row(children: chips),
-                                  const SizedBox(height: 12),
-                                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [countText]),
-                                ],
-                              );
-                            }
 
                             return Row(
                               children: [

@@ -63,6 +63,7 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
               final head = filtered[index];
               final folderName = head['folders']?['folder_name'] ?? 'No Folder';
               final shopName = head['shop']?['shop_name'] ?? 'No Shop';
+              final isSmall = MediaQuery.of(context).size.width < 450;
               
               return Card(
                 elevation: 0,
@@ -72,75 +73,85 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                   side: BorderSide(color: AppColors.divider, width: 1),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardPrice.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.layers_rounded, color: AppColors.cardPrice, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              head['product_name'], 
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary, letterSpacing: -0.2)
-                            ),
-                            const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: [
-                                _buildTag(shopName, AppColors.cardSales),
-                                _buildTag(folderName, AppColors.cardStock),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
+                  padding: const EdgeInsets.all(12),
+                  child: isSmall 
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '₹${head['product_rate']}', 
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: AppColors.textPrimary, letterSpacing: -0.5)
-                          ),
-                          const SizedBox(height: 4),
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => _showProductHeadDialog(context, ref, foldersAsync, shopsAsync, head: head),
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.edit_note_rounded, size: 18, color: AppColors.primary.withOpacity(0.8)),
-                                    const SizedBox(width: 4),
-                                    Text('Edit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary.withOpacity(0.8))),
-                                  ],
+                          Row(
+                            children: [
+                              _buildIconBox(),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  head['product_name'], 
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary, letterSpacing: -0.2)
                                 ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              _buildTag(shopName, AppColors.cardSales),
+                              _buildTag(folderName, AppColors.cardStock),
+                            ],
+                          ),
+                          const Divider(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '₹${head['product_rate']}', 
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.textPrimary)
+                              ),
+                              _buildEditButton(context, ref, foldersAsync, shopsAsync, head),
+                            ],
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          _buildIconBox(),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  head['product_name'], 
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary, letterSpacing: -0.2)
+                                ),
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: [
+                                    _buildTag(shopName, AppColors.cardSales),
+                                    _buildTag(folderName, AppColors.cardStock),
+                                  ],
+                                ),
+                              ],
                             ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '₹${head['product_rate']}', 
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: AppColors.textPrimary, letterSpacing: -0.5)
+                              ),
+                              const SizedBox(height: 4),
+                              _buildEditButton(context, ref, foldersAsync, shopsAsync, head),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
                 ),
               );
             },
@@ -150,6 +161,42 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
         error: (err, _) => ErrorView(
           error: err,
           onRetry: () => ref.invalidate(allProductHeadsProvider),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconBox() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: AppColors.cardPrice.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Icon(Icons.layers_rounded, color: AppColors.cardPrice, size: 20),
+    );
+  }
+
+  Widget _buildEditButton(BuildContext context, WidgetRef ref, AsyncValue<List<Map<String, dynamic>>> foldersAsync, AsyncValue<List<Shop>> shopsAsync, Map<String, dynamic> head) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showProductHeadDialog(context, ref, foldersAsync, shopsAsync, head: head),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.edit_note_rounded, size: 18, color: AppColors.primary.withOpacity(0.8)),
+              const SizedBox(width: 4),
+              Text('Edit', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary.withOpacity(0.8))),
+            ],
+          ),
         ),
       ),
     );
@@ -221,38 +268,68 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: TextField(
-                            controller: nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Product Name',
-                              hintText: 'e.g. Green 1mm',
-                              border: OutlineInputBorder(),
+                    Builder(builder: (context) {
+                      final isMobileDialog = MediaQuery.of(context).size.width < 500;
+                      if (isMobileDialog) {
+                        return Column(
+                          children: [
+                            TextField(
+                              controller: nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Product Name',
+                                hintText: 'e.g. Green 1mm',
+                                border: OutlineInputBorder(),
+                              ),
+                              autofocus: true,
+                              textCapitalization: TextCapitalization.words,
                             ),
-                            autofocus: true,
-                            textCapitalization: TextCapitalization.words,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: TextField(
-                            controller: rateController,
-                            decoration: const InputDecoration(
-                              labelText: 'Rate',
-                              hintText: '550',
-                              border: OutlineInputBorder(),
-                              prefixText: '₹ ',
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: rateController,
+                              decoration: const InputDecoration(
+                                labelText: 'Rate',
+                                hintText: '550',
+                                border: OutlineInputBorder(),
+                                prefixText: '₹ ',
+                              ),
+                              keyboardType: TextInputType.number,
                             ),
-                            keyboardType: TextInputType.number,
+                          ],
+                        );
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: TextField(
+                              controller: nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Product Name',
+                                hintText: 'e.g. Green 1mm',
+                                border: OutlineInputBorder(),
+                              ),
+                              autofocus: true,
+                              textCapitalization: TextCapitalization.words,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: TextField(
+                              controller: rateController,
+                              decoration: const InputDecoration(
+                                labelText: 'Rate',
+                                hintText: '550',
+                                border: OutlineInputBorder(),
+                                prefixText: '₹ ',
+                              ),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
                     const SizedBox(height: 16),
                     foldersAsync.when(
                       data: (folders) => DropdownButtonFormField<int>(

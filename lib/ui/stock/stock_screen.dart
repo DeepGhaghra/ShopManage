@@ -171,12 +171,15 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                               style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 11, fontWeight: FontWeight.bold),
                             );
 
-                            return Row(
-                              children: [
-                                ...chips,
-                                const Spacer(),
-                                countText,
-                              ],
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  ...chips,
+                                  const SizedBox(width: 20),
+                                  countText,
+                                ],
+                              ),
                             );
                           }),
                         ],
@@ -194,12 +197,12 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                         color: const Color(0xFFF1F5F9),
                         border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1.5)),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 10),
+                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 36, vertical: 10),
                       child: Row(
-                        children: const [
-                          Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 1))),
-                          Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 1))),
-                          Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 1))),
+                        children: [
+                          Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.grey, letterSpacing: 1))),
+                          Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.grey, letterSpacing: 1))),
+                          Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 10 : 11, color: Colors.grey, letterSpacing: 1))),
                         ],
                       ),
                     ),

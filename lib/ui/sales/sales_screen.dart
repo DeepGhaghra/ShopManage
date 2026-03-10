@@ -874,22 +874,32 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     required String tooltip,
     required VoidCallback? onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-          decoration: BoxDecoration(
-            color: onTap == null ? Colors.grey.shade100 : color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: onTap == null ? Colors.transparent : color.withValues(alpha: 0.3), width: 1),
+    return Builder(builder: (context) {
+      final isMobileButton = MediaQuery.of(context).size.width < 600;
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobileButton ? 12 : 7, 
+              vertical: isMobileButton ? 8 : 5
+            ),
+            decoration: BoxDecoration(
+              color: onTap == null ? Colors.grey.shade100 : color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: onTap == null ? Colors.transparent : color.withValues(alpha: 0.3), width: 1),
+            ),
+            child: Icon(
+              icon, 
+              size: isMobileButton ? 18 : 15, 
+              color: onTap == null ? Colors.grey.shade400 : color
+            ),
           ),
-          child: Icon(icon, size: 15, color: onTap == null ? Colors.grey.shade400 : color),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildRecentSalesContent({bool isWide = false, bool isSheet = false}) {

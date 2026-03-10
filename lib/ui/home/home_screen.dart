@@ -170,6 +170,7 @@ class HomeScreen extends ConsumerWidget {
                             color: const Color(0xFF1976D2),
                             onTap: () => _showTodaySalesDetail(context, activeShop.id),
                             isExpanded: false,
+                            compact: true,
                           ),
                           const SizedBox(height: 12),
                           _MetricCard(
@@ -179,6 +180,7 @@ class HomeScreen extends ConsumerWidget {
                             color: const Color(0xFFD32F2F),
                             onTap: () => _showLowStockDetail(context, activeShop.id),
                             isExpanded: false,
+                            compact: true,
                           ),
                           const SizedBox(height: 12),
                           _MetricCard(
@@ -188,6 +190,7 @@ class HomeScreen extends ConsumerWidget {
                             color: const Color(0xFF388E3C),
                             onTap: () => _showTrendingDetail(context, activeShop.id),
                             isExpanded: false,
+                            compact: true,
                           ),
                         ],
                       );
@@ -358,6 +361,7 @@ class _MetricCard extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
   final bool isExpanded;
+  final bool compact;
 
   const _MetricCard({
     required this.title,
@@ -366,6 +370,7 @@ class _MetricCard extends StatelessWidget {
     required this.color,
     required this.onTap,
     this.isExpanded = true,
+    this.compact = false,
   });
 
   @override
@@ -395,38 +400,64 @@ class _MetricCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             splashColor: Colors.white.withValues(alpha: 0.1),
             child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: compact ? 16 : 20),
+              child: compact 
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              value,
+                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              title,
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                          child: Icon(icon, color: Colors.white, size: 28),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(icon, color: Colors.white, size: 24),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          value,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Icon(icon, color: Colors.white, size: 24),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),

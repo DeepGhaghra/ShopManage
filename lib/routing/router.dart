@@ -11,6 +11,12 @@ import '../ui/purchase/purchase_screen.dart';
 import '../ui/pricelist/pricelist_screen.dart';
 import '../ui/common/log_viewer_screen.dart';
 import '../ui/export/export_screen.dart';
+import '../ui/admin/admin_dashboard.dart';
+import '../ui/admin/folder_management_screen.dart';
+import '../ui/admin/location_management_screen.dart';
+import '../ui/admin/product_head_management_screen.dart';
+import '../ui/admin/shop_management_screen.dart';
+import '../services/core_providers.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -24,7 +30,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (session != null && isLoggingIn) {
-        return '/';
+        // We'll let the role-based redirect handle this below by returning '/' or '/admin'
+        final email = session.user.email ?? '';
+        return email.startsWith('admin@') ? '/admin' : '/';
+      }
+
+      // Role-based protection
+      if (session != null) {
+        final isAdmin = session.user.email?.startsWith('admin@') ?? false;
+        final isPathAdmin = state.uri.toString().startsWith('/admin');
+        final activeShop = ref.read(activeShopProvider);
+
+        if (isAdmin && !isPathAdmin && state.uri.toString() == '/' && activeShop == null) {
+          return '/admin';
+        }
+        if (!isAdmin && isPathAdmin) {
+          return '/';
+        }
       }
 
       return null;
@@ -65,6 +87,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/export',
         builder: (context, state) => const ExportScreen(),
+      ),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminDashboard(),
+      ),
+      GoRoute(
+        path: '/admin/folders',
+        builder: (context, state) => const FolderManagementScreen(),
+      ),
+      GoRoute(
+        path: '/admin/locations',
+        builder: (context, state) => const LocationManagementScreen(),
+      ),
+      GoRoute(
+        path: '/admin/products',
+        builder: (context, state) => const ProductHeadManagementScreen(),
+      ),
+      GoRoute(
+        path: '/admin/shops',
+        builder: (context, state) => const ShopManagementScreen(),
       ),
     ],
   );

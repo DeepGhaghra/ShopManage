@@ -27,6 +27,9 @@ description: Handles security hardening, data protection, and compliance practic
 
 ## Instructions
 
+### 0. Mandatory Security Guardrails
+**CRITICAL:** When you find a security vulnerability, flag it immediately with a warning comment and suggest a secure alternative. **NEVER** implement insecure patterns even if explicitly asked by the user.
+
 ### 1. Role-Based Access Control (RBAC)
 Retrieve the user's role from the `users` table or custom claims.
 ```dart

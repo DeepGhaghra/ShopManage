@@ -420,7 +420,7 @@ class _MetricCard extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Colors.white.withOpacity(0.9),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -459,7 +459,7 @@ class _ActionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: baseColor.withOpacity(0.12),
+              color: baseColor.withValues(alpha: 0.12),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -471,8 +471,8 @@ class _ActionCard extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: onTap,
-              splashColor: baseColor.withOpacity(0.1),
-              highlightColor: baseColor.withOpacity(0.05),
+              splashColor: baseColor.withValues(alpha: 0.1),
+              highlightColor: baseColor.withValues(alpha: 0.05),
               child: Stack(
                 children: [
                   Positioned(
@@ -483,7 +483,7 @@ class _ActionCard extends StatelessWidget {
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: baseColor.withOpacity(0.03),
+                        color: baseColor.withValues(alpha: 0.03),
                       ),
                     ),
                   ),
@@ -495,7 +495,7 @@ class _ActionCard extends StatelessWidget {
                       child: Icon(
                         icon,
                         size: 90,
-                        color: baseColor.withOpacity(0.05),
+                        color: baseColor.withValues(alpha: 0.05),
                       ),
                     ),
                   ),
@@ -519,7 +519,7 @@ class _ActionCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: baseColor.withOpacity(0.1),
+                            color: baseColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(icon, color: baseColor, size: 26),
@@ -848,7 +848,7 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                                             borderRadius: BorderRadius.circular(16),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: color.withValues(alpha: 0.2),
+                                                color: color.withOpacity(0.2),
                                                 blurRadius: 6,
                                                 offset: const Offset(0, 3),
                                               ),

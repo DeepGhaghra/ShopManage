@@ -8,6 +8,7 @@ import 'routing/router.dart';
 import 'theme/app_theme.dart';
 import 'services/connectivity_providers.dart';
 import 'services/log_service.dart';
+import 'services/log_repository.dart';
 import 'services/auth_listener.dart';
 import 'ui/common/offline_checklist_screen.dart';
 
@@ -17,16 +18,17 @@ void main() async {
   // Load environment variables from .env file
   await dotenv.load(fileName: ".env");
   
-  // Initialize log service early
-  final logService = LogService();
-  await logService.init();
-  logService.info('System', 'App boot started');
-
+  // 1. Initialize Supabase first (needed for remote logging)
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
-  logService.success('System', 'Supabase initialized successfully');
+  
+  // 2. Setup Log Service with Remote Repository
+  final logRepo = LogRepository(Supabase.instance.client);
+  final logService = LogService(logRepo);
+  await logService.init();
+  logService.info('System', 'App boot started with remote logging');
 
   runApp(
     ProviderScope(

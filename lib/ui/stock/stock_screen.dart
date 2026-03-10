@@ -56,304 +56,272 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        leadingWidth: 96,
-        leading: Builder(builder: (context) {
-          return Row(
-            children: [
-              const BackButton(color: AppColors.textPrimary),
-              IconButton(
-                icon: const Icon(Icons.menu, color: AppColors.primary),
-                tooltip: 'Menu',
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ],
-          );
-        }),
-        title: Builder(builder: (context) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        leading: const BackButton(color: AppColors.textPrimary),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Stock View', 
+              style: TextStyle(
+                fontWeight: FontWeight.w800, 
+                color: AppColors.textPrimary,
+                fontSize: isMobile ? 18 : 20,
+              )
+            ),
+            if (shopName.isNotEmpty)
               Text(
-                'Stock View', 
+                shopName,
                 style: TextStyle(
-                  fontWeight: FontWeight.w800, 
-                  color: AppColors.textPrimary,
-                  fontSize: isMobile ? 16 : 20,
-                )
-              ),
-              if (shopName.isNotEmpty)
-                Text(
-                  shopName,
-                  style: TextStyle(
-                    fontSize: isMobile ? 9 : 11, 
-                    fontWeight: FontWeight.bold, 
-                    color: AppColors.accent, 
-                    letterSpacing: 0.5
-                  ),
+                  fontSize: isMobile ? 10 : 12, 
+                  fontWeight: FontWeight.w600, 
+                  color: AppColors.textSecondary,
                 ),
-            ],
-          );
-        }),
+              ),
+          ],
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         actions: [
-          Builder(builder: (context) {
-            if (isMobile) {
-              return PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: AppColors.primary),
-                onSelected: (value) {
-                  if (value == 'add') _showAddStockDialog(context, ref);
-                  if (value == 'transfer') _showTransferStockDialog(context, ref);
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'add', child: Row(children: [Icon(Icons.add_shopping_cart, size: 18), SizedBox(width: 8), Text('Add Stock')])),
-                  const PopupMenuItem(value: 'transfer', child: Row(children: [Icon(Icons.compare_arrows, size: 18), SizedBox(width: 8), Text('Transfer Stock')])),
-                ],
-              );
-            }
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildAppBarAction(Icons.add_shopping_cart_rounded, 'Add Stock', () => _showAddStockDialog(context, ref), AppColors.primary),
-                const SizedBox(width: 8),
-                _buildAppBarAction(Icons.compare_arrows_rounded, 'Transfer Stock', () => _showTransferStockDialog(context, ref), AppColors.primaryDim),
-              ],
-            );
-          }),
+          IconButton(
+            icon: const Icon(Icons.add_shopping_cart_rounded, color: AppColors.primary),
+            onPressed: () => _showAddStockDialog(context, ref),
+          ),
+          IconButton(
+            icon: const Icon(Icons.compare_arrows_rounded, color: AppColors.primary),
+            onPressed: () => _showTransferStockDialog(context, ref),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       drawer: const AppDrawer(currentRoute: '/stock'),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: stockAsync.when(
-            data: (stockList) {
-              final filteredList = _filterStock(stockList);
+      body: stockAsync.when(
+        data: (stockList) {
+          final filteredList = _filterStock(stockList);
 
-              return RefreshIndicator(
-                onRefresh: () async => ref.invalidate(shopStockProvider),
-                color: AppColors.primary,
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  slivers: [
-                    // ── Search & Filter Panel ──────────────────────────────────
-                    SliverToBoxAdapter(
-                      child: RepaintBoundary(
-                        child: Container(
-                          margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
-                          ),
-                          child: Column(
-                            children: [
-                              TextField(
-                                controller: _searchController,
-                                onChanged: (val) => setState(() => _searchQuery = val),
-                                decoration: InputDecoration(
-                                  hintText: _filterMode == 'design' ? 'Search design...' : 'Search location...',
-                                  prefixIcon: const Icon(Icons.search, size: 20),
-                                  suffixIcon: _searchQuery.isNotEmpty 
-                                    ? IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () {
-                                        _searchController.clear();
-                                        setState(() => _searchQuery = '');
-                                      })
-                                    : null,
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                                  filled: true,
-                                  fillColor: const Color(0xFFF8FAFC),
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                                ),
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(shopStockProvider),
+            color: AppColors.primary,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              slivers: [
+                // ── Search & Filter Panel ──────────────────────────────────
+                SliverToBoxAdapter(
+                  child: RepaintBoundary(
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            onChanged: (val) => setState(() => _searchQuery = val),
+                            decoration: InputDecoration(
+                              hintText: _filterMode == 'design' ? 'Search design...' : 'Search location...',
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              suffixIcon: _searchQuery.isNotEmpty 
+                                ? IconButton(
+                                    icon: const Icon(Icons.close, size: 18),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                    },
+                                  )
+                                : null,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
                               ),
-                              const SizedBox(height: 12),
-                              Builder(builder: (context) {
-                                final isMobile = MediaQuery.of(context).size.width < 600;
-                                final chips = [
-                                  _FilterChip(
-                                    label: 'Design NO',
-                                    isSelected: _filterMode == 'design',
-                                    onTap: () => setState(() => _filterMode = 'design'),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _FilterChip(
-                                    label: 'Location',
-                                    isSelected: _filterMode == 'location',
-                                    onTap: () => setState(() => _filterMode = 'location'),
-                                  ),
-                                ];
-                                
-                                final countText = Text(
-                                  '${filteredList.length} Items',
-                                  style: TextStyle(color: Colors.blueGrey.shade300, fontSize: 11, fontWeight: FontWeight.bold),
-                                );
-
-                                if (isMobile) {
-                                  return Column(
-                                    children: [
-                                      Row(children: chips),
-                                      const SizedBox(height: 12),
-                                      Row(mainAxisAlignment: MainAxisAlignment.end, children: [countText]),
-                                    ],
-                                  );
-                                }
-
-                                return Row(
-                                  children: [
-                                    ...chips,
-                                    const Spacer(),
-                                    countText,
-                                  ],
-                                );
-                              }),
-                            ],
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          Builder(builder: (context) {
+                            final isMobile = MediaQuery.of(context).size.width < 600;
+                            final chips = [
+                              _FilterChip(
+                                label: 'Design NO',
+                                isSelected: _filterMode == 'design',
+                                onTap: () => setState(() => _filterMode = 'design'),
+                              ),
+                              const SizedBox(width: 8),
+                              _FilterChip(
+                                label: 'Location',
+                                isSelected: _filterMode == 'location',
+                                onTap: () => setState(() => _filterMode = 'location'),
+                              ),
+                            ];
+                            
+                            final countText = Text(
+                              '${filteredList.length} Items',
+                              style: TextStyle(color: Colors.blueGrey.shade300, fontSize: 11, fontWeight: FontWeight.bold),
+                            );
+
+                            if (isMobile) {
+                              return Column(
+                                children: [
+                                  Row(children: chips),
+                                  const SizedBox(height: 12),
+                                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [countText]),
+                                ],
+                              );
+                            }
+
+                            return Row(
+                              children: [
+                                ...chips,
+                                const Spacer(),
+                                countText,
+                              ],
+                            );
+                          }),
+                        ],
                       ),
                     ),
+                  ),
+                ),
 
-                    // ── Table Header ───────────────────────────────────────────
-                    SliverStickyHeader(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF475569),
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                        ),
-                        child: Builder(builder: (context) {
-                          return Row(
-                            children: [
-                              Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(color: Colors.white70, fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
-                              Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(color: Colors.white70, fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
-                              Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.right, style: TextStyle(color: Colors.white70, fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
-                            ],
-                          );
-                        }),
+                // ── Sticky Header ──────────────────────────────────────────
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _StockHeaderDelegate(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1.5)),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 10),
+                      child: Row(
+                        children: const [
+                          Expanded(flex: 3, child: Text('DESIGN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 1))),
+                          Expanded(flex: 3, child: Text('LOCATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 1))),
+                          Expanded(flex: 2, child: Text('QTY', textAlign: TextAlign.end, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.grey, letterSpacing: 1))),
+                        ],
                       ),
                     ),
+                  ),
+                ),
 
-                    // ── Data Rows ──────────────────────────────────────────────
-                    if (filteredList.isEmpty)
-                      SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: EmptyStateView(
-                          title: 'No Matching Stock',
-                          message: _searchQuery.isEmpty ? 'There is no stock available in this warehouse.' : 'Try adjusting your search filters.',
-                          icon: Icons.inventory_2_outlined,
-                        ),
-                      )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final row = filteredList[index];
-                              final design = row['products_design'] ?? {};
-                              final location = row['locations'] ?? {};
-                              final qty = (row['quantity'] as num).toInt();
-                              final isLow = qty < 10;
-                              final isLast = index == filteredList.length - 1;
+                // ── Stock List / No Data ──────────────────────────────────
+                if (filteredList.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: EmptyStateView(
+                      title: 'No Matching Stock',
+                      message: _searchQuery.isEmpty ? 'There is no stock available in this warehouse.' : 'Try adjusting your search filters.',
+                      icon: Icons.inventory_2_outlined,
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final row = filteredList[index];
+                          final design = row['products_design'] as Map<String, dynamic>? ?? {};
+                          final location = row['locations'] as Map<String, dynamic>? ?? {};
+                          final qty = (row['quantity'] as num?)?.toInt() ?? 0;
+                          final isLow = qty < 10;
+                          final isLast = index == filteredList.length - 1;
 
-                              return RepaintBoundary(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(16)) : null,
-                                    border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(16)) : null,
+                              border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    design['design_no']?.toString() ?? '-',
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textPrimary),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                ),
+                                Expanded(
+                                  flex: 3,
                                   child: Row(
                                     children: [
-                                      Expanded(
-                                        flex: 3,
+                                      Icon(Icons.location_on_outlined, size: 10, color: Colors.grey.shade400),
+                                      const SizedBox(width: 2),
+                                      Flexible(
                                         child: Text(
-                                          design['design_no']?.toString() ?? '-',
-                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary),
+                                          location['name']?.toString() ?? 'Warehouse',
+                                          style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w500),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade400),
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              child: Text(
-                                                location['name']?.toString() ?? 'Warehouse',
-                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w500),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.end,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: isLow ? Colors.orange.shade50 : Colors.green.shade50,
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                qty.toString(),
-                                                style: TextStyle(
-                                                  color: isLow ? Colors.orange.shade700 : Colors.green.shade700,
-                                                  fontWeight: FontWeight.w900,
-                                                  fontSize: MediaQuery.of(context).size.width < 600 ? 12 : 13,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            IconButton(
-                                              icon: const Icon(Icons.history_rounded, size: 20),
-                                              color: AppColors.primary,
-                                              tooltip: 'View History',
-                                              onPressed: () {
-                                                showModalBottomSheet(
-                                                  context: context,
-                                                  isScrollControlled: true,
-                                                  backgroundColor: Colors.transparent,
-                                                  builder: (context) => DesignHistorySheet(
-                                                    designId: design['id'] as int,
-                                                    designNo: design['design_no']?.toString() ?? '-',
-                                                  ),
-                                                );
-                                              },
-                                              constraints: const BoxConstraints(),
-                                              padding: EdgeInsets.zero,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
                                     ],
                                   ),
                                 ),
-                              );
-                            },
-                            childCount: filteredList.length,
-                          ),
-                        ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isLow ? Colors.orange.shade50 : Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    qty.toString(),
+                                    style: TextStyle(
+                                      color: isLow ? Colors.orange.shade700 : Colors.green.shade700,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  icon: const Icon(Icons.history_rounded, size: 18),
+                                  color: AppColors.primary,
+                                  tooltip: 'View History',
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) => DesignHistorySheet(
+                                        designId: design['id'] as int,
+                                        designNo: design['design_no']?.toString() ?? '-',
+                                      ),
+                                    );
+                                  },
+                                  constraints: const BoxConstraints(),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        childCount: filteredList.length,
                       ),
-                  ],
-                ),
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => ErrorView(
-              error: err,
-              onRetry: () => ref.invalidate(shopStockProvider),
+                    ),
+                  ),
+              ],
             ),
-          ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => ErrorView(
+          error: err,
+          onRetry: () => ref.invalidate(shopStockProvider),
         ),
       ),
     );
@@ -422,35 +390,22 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class SliverStickyHeader extends StatelessWidget {
+class _StockHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
-  const SliverStickyHeader({super.key, required this.child});
+  _StockHeaderDelegate({required this.child});
 
   @override
-  Widget build(BuildContext context) {
-    return SliverPersistentHeader(
-      pinned: true,
-      delegate: _SliverDelegate(child: child),
-    );
-  }
-}
-
-class _SliverDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-  _SliverDelegate({required this.child});
-
+  double get minExtent => 44;
   @override
-  double get minExtent => 38;
-  @override
-  double get maxExtent => 38;
+  double get maxExtent => 44;
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
+    return SizedBox.expand(child: child);
   }
 
   @override
-  bool shouldRebuild(covariant _SliverDelegate oldDelegate) => false;
+  bool shouldRebuild(covariant _StockHeaderDelegate oldDelegate) => false;
 }
 
 // ─── Add Stock Dialog ─────────────────────────────────────────────
@@ -689,15 +644,30 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                      color: Theme.of(context).primaryColor.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(Icons.inventory_2_rounded, color: Theme.of(context).primaryColor, size: 32),
                   ),
                   const SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text('Inventory Update', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
                   const SizedBox(height: 4),
-                  Text('Add new stock to your system', style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                  if (ref.watch(activeShopProvider) != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                      ),
+                      child: Text(
+                        'SHOP: ${ref.watch(activeShopProvider)!.shopName.toUpperCase()}',
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.primary, letterSpacing: 0.5),
+                      ),
+                    ),
+                  Text('Add new stock to the selected shop', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   const SizedBox(height: 28),
 
                   // Design Details
@@ -1015,7 +985,23 @@ class _TransferStockDialogState extends ConsumerState<_TransferStockDialog> {
                   const SizedBox(height: 16),
                   const Text('Transfer Stock', textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
                   const SizedBox(height: 4),
-                  Text('Move inventory between locations', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                  if (ref.watch(activeShopProvider) != null)
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          'SHOP: ${ref.watch(activeShopProvider)!.shopName.toUpperCase()}',
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.orange, letterSpacing: 0.5),
+                        ),
+                      ),
+                    ),
+                  Text('Move inventory within the selected shop', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   const SizedBox(height: 28),
 
                   _sectionHeader('1. SELECT DESIGN'),

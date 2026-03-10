@@ -72,6 +72,9 @@ class _SaleItemLine {
   int quantity = 0;
   final TextEditingController qtyController = TextEditingController(); 
   final TextEditingController rateController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
+  final FocusNode searchFocusNode = FocusNode();
+  final FocusNode qtyFocusNode = FocusNode();
 
   int get currentRate => int.tryParse(rateController.text) ?? 0;
   int get total => quantity * currentRate;
@@ -79,6 +82,9 @@ class _SaleItemLine {
   void dispose() {
     qtyController.dispose();
     rateController.dispose();
+    searchController.dispose();
+    searchFocusNode.dispose();
+    qtyFocusNode.dispose();
   }
 }
 
@@ -138,7 +144,12 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     super.dispose();
   }
 
-  void _addLine() => setState(() => _lines.add(_SaleItemLine()));
+  void _addLine() {
+    final newLine = _SaleItemLine();
+    setState(() => _lines.add(newLine));
+    // Focus the new line after it's rendered
+    Future.microtask(() => newLine.searchFocusNode.requestFocus());
+  }
 
   Future<void> _removeLine(int index) async {
     final line = _lines[index];
@@ -221,6 +232,9 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             };
         }
         
+        if (line.stockRow != null) {
+          line.searchController.text = '${line.designNo}  |  ${line.locationName}  |  ${line.maxQuantity}';
+        }
         _lines.add(line);
       }
       
@@ -396,7 +410,6 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primary)));
     }
 
-    final recentSalesAsync = ref.watch(groupedRecentSalesProvider);
     final partiesAsync     = ref.watch(partiesProvider);
     final stockAsync       = ref.watch(shopStockProvider);
 
@@ -427,6 +440,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
         .toSet();
 
     final isWide = MediaQuery.of(context).size.width > 900;
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     Widget formContent = Card(
       elevation: 0,
@@ -440,17 +454,16 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       ),
       margin: const EdgeInsets.all(16),
       child: SingleChildScrollView(child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── Header ──────────────────────────────────────────────────────
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: AppColors.primary.withAlpha(20), shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
                   child: Icon(_editingInvoiceNo != null ? Icons.edit_document : Icons.shopping_cart_checkout, color: AppColors.primary),
                 ),
                 const SizedBox(width: 16),
@@ -458,26 +471,9 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            _editingInvoiceNo != null ? 'Update Sales' : 'Create Invoice', 
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary)
-                          ),
-                          if (_editingInvoiceNo != null) ...[
-                            const SizedBox(width: 12),
-                            TextButton.icon(
-                              onPressed: _cancelEdit,
-                              icon: const Icon(Icons.close, size: 16, color: Colors.red),
-                              label: const Text('Cancel Edit', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                              style: TextButton.styleFrom(
-                                backgroundColor: Colors.red.shade50,
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ],
-                        ],
+                      Text(
+                        _editingInvoiceNo != null ? 'Update Sales' : 'Create Invoice', 
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary)
                       ),
                       if (_editingInvoiceNo != null)
                         Container(
@@ -504,21 +500,22 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ── Invoice No + Party ──────────────────────────────────────────
-            // ── Invoice No + Party ──────────────────────────────────────────
+            // ── Invoice Details ──────────────────────────────────────────
             Builder(builder: (context) {
               final isMobile = MediaQuery.of(context).size.width < 600;
               final invoiceField = TextFormField(
                 controller: _invoiceController,
                 readOnly: true,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueGrey),
                 decoration: InputDecoration(
-                  labelText: 'Invoice Number',
-                  labelStyle: TextStyle(color: Colors.grey.shade600),
+                  labelText: 'Invoice ID',
+                  labelStyle: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.normal),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
-                  prefixIcon: const Icon(Icons.receipt_long, color: Colors.grey),
+                  fillColor: Colors.grey.shade50,
+                  prefixIcon: const Icon(Icons.tag_rounded, color: Colors.grey, size: 20),
                 ),
               );
 
@@ -537,33 +534,37 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                         _selectedParty = party;
                         _partySearchController.text = party.partyName;
                       });
+                      if (_lines.isNotEmpty) {
+                        _lines.first.searchFocusNode.requestFocus();
+                      }
                     },
                     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                      if (controller.text != _partySearchController.text && _selectedParty != null) {
-                        Future.microtask(() => controller.text = _partySearchController.text);
+                      if (_selectedParty != null && controller.text.isEmpty) {
+                        controller.text = _selectedParty!.partyName;
                       }
                       return TextFormField(
                         controller: controller,
                         focusNode: focusNode,
                         decoration: InputDecoration(
-                          labelText: 'Search Party',
-                          labelStyle: TextStyle(color: AppColors.primary.withValues(alpha: 0.7)),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+                          hintText: 'Select Party Name...',
+                          isDense: true,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade100)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade100)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
                           filled: true,
                           fillColor: Colors.white,
-                          prefixIcon: const Icon(Icons.business_center_rounded, color: AppColors.primary),
+                          prefixIcon: const Icon(Icons.person_pin_rounded, color: AppColors.primary, size: 22),
                           suffixIcon: (controller.text.isNotEmpty) 
                             ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18), 
+                                icon: const Icon(Icons.cancel_rounded, size: 20, color: Colors.grey), 
                                 onPressed: () {
                                   controller.clear();
                                   _partySearchController.clear();
                                   setState(() => _selectedParty = null);
                                 }
                               )
-                            : const Icon(Icons.search, size: 20, color: Colors.grey),
+                            : Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey.shade400),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         ),
                         onFieldSubmitted: (_) => onFieldSubmitted(),
                       );
@@ -572,43 +573,31 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                       return Align(
                         alignment: Alignment.topLeft,
                         child: Material(
-                          elevation: 8,
-                          borderRadius: BorderRadius.circular(14),
+                          elevation: 12,
+                          shadowColor: Colors.black26,
+                          borderRadius: BorderRadius.circular(16),
                           color: Colors.white,
                           clipBehavior: Clip.antiAlias,
                           child: ConstrainedBox(
-                            constraints: BoxConstraints(maxHeight: 220, maxWidth: isMobile ? MediaQuery.of(context).size.width - 64 : 400),
+                            constraints: BoxConstraints(maxHeight: 250, maxWidth: isMobile ? MediaQuery.of(context).size.width - 64 : 450),
                             child: ListView.builder(
                               padding: EdgeInsets.zero,
                               shrinkWrap: true,
                               itemCount: options.length,
                               itemBuilder: (context, index) {
                                 final party = options.elementAt(index);
-                                return InkWell(
+                                return ListTile(
                                   onTap: () => onSelected(party),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                                          child: const Icon(Icons.business, size: 16, color: AppColors.primary),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(party.partyName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                                              if (party.city?.isNotEmpty ?? false)
-                                                Text(party.city!, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.08), shape: BoxShape.circle),
+                                    child: const Icon(Icons.person_outline_rounded, size: 18, color: AppColors.primary),
                                   ),
+                                  title: Text(party.partyName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                  subtitle: party.city?.isNotEmpty ?? false 
+                                      ? Text(party.city!, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)) 
+                                      : null,
+                                  dense: true,
                                 );
                               },
                             ),
@@ -626,7 +615,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                 return Column(
                   children: [
                     invoiceField,
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     partyField,
                   ],
                 );
@@ -641,9 +630,24 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             }),
             const SizedBox(height: 32),
 
-            // ── Order Items Header ──────────────────────────────────────────
-            Text('Order Items', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-            const SizedBox(height: 16),
+            // ── Order Items Section ──────────────────────────────────────────
+            Row(
+              children: [
+                const Icon(Icons.view_list_rounded, size: 18, color: Colors.blueGrey),
+                const SizedBox(width: 8),
+                Text('Order Items', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900, color: Colors.blueGrey.shade800, letterSpacing: 0.5)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.blueGrey.shade50, borderRadius: BorderRadius.circular(6)),
+                  child: Text('${_lines.length} Line Items', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey.shade700)),
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.only(top: 8, bottom: 16),
+              child: Divider(height: 1, thickness: 0.5),
+            ),
 
             // ── Items ───────────────────────────────────────────────────────
             ListView.builder(
@@ -654,7 +658,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                 final line = _lines[index];
                 return RepaintBoundary(
                   child: _SaleItemRow(
-                    key: ValueKey('row_${index}_${line.hashCode}'),
+                    key: ObjectKey(line),
                     index: index,
                     line: line,
                     availableStock: availableStock,
@@ -664,6 +668,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                     onSelected: (row) async {
                       setState(() { 
                         line.stockRow = row; 
+                        line.searchController.text = '${line.designNo}  |  ${line.locationName}  |  ${line.maxQuantity}';
                         line.quantity = 0; 
                         line.qtyController.text = ''; 
                       });
@@ -674,115 +679,105 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                       } else {
                         setState(() => line.rateController.text = line.rate.toString());
                       }
+                      line.qtyFocusNode.requestFocus(); // Auto-focus Qty after selection
                     },
                   ),
                 );
               },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: isMobile ? 12 : 16),
 
             // ── Add Item Button ─────────────────────────────────────────────
             Center(
-              child: TextButton.icon(
-                onPressed: _addLine,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: AppColors.primary.withAlpha(50)),
+              child: InkWell(
+                onTap: _addLine,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      const Text('Add Another Item', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    ],
                   ),
                 ),
-                icon: const Icon(Icons.add_circle_outline),
-                label: const Text('Add Another Item', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // ── Grand Total + Save ──────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: AppColors.textPrimary,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Builder(builder: (context) {
-                final isMobile = MediaQuery.of(context).size.width < 600;
                 
-                final totalSection = Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Total Sheets', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                    Text(
-                      '${_lines.where((l) => l.stockRow != null).fold<int>(0, (sum, l) => sum + l.quantity)}',
-                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                );
-
-                final buttonSection = Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  alignment: isMobile ? WrapAlignment.center : WrapAlignment.end,
-                  children: [
-                    if (_editingInvoiceNo != null)
-                      OutlinedButton.icon(
-                        onPressed: _isSaving ? null : _cancelEdit,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white70,
-                          side: const BorderSide(color: Colors.white24),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        icon: const Icon(Icons.close, size: 18),
-                        label: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    
-                    ElevatedButton(
-                      onPressed: _isSaving ? null : () => _saveChallan(print: false),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.15),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                        ),
-                      ),
-                      child: _isSaving 
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
-                        : Text(_editingInvoiceNo != null ? 'Update Only' : 'Save Only', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: _isSaving ? null : () => _saveChallan(print: true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        elevation: 4,
-                        shadowColor: AppColors.primary.withValues(alpha: 0.4),
-                      ),
-                      icon: _isSaving ? const SizedBox.shrink() : const Icon(Icons.print_rounded, size: 18),
-                      label: Text(_editingInvoiceNo != null ? 'Update & Print' : 'Save & Print', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                );
-
-                if (isMobile) {
-                  return Column(
-                    children: [
-                      totalSection,
-                      const SizedBox(height: 20),
-                      SizedBox(width: double.infinity, child: buttonSection),
-                    ],
-                  );
-                }
-                return Row(
+                final totalSection = Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Total Sheets', style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_lines.where((l) => l.stockRow != null).fold<int>(0, (sum, l) => sum + l.quantity)}',
+                          style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
+                        ),
+                      ],
+                    ),
+                    const Icon(Icons.auto_graph_rounded, color: Colors.white24, size: 32),
+                  ],
+                );
+                
+                final buttonSection = Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextButton(
+                        onPressed: _isSaving ? null : () => _saveChallan(print: false),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                        ),
+                        child: const Text('Save Only', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton.icon(
+                        onPressed: _isSaving ? null : () => _saveChallan(print: true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.print_rounded, size: 18),
+                        label: const Text('Save & Print', style: TextStyle(fontWeight: FontWeight.w900)),
+                      ),
+                    ),
+                  ],
+                );
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     totalSection,
+                    const SizedBox(height: 24),
                     buttonSection,
                   ],
                 );
@@ -794,184 +789,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     );
 
     // ── Recent Sales Panel ────────────────────────────────────────────────────
-    Widget recentSalesContent = Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Colors.grey.shade200)),
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.history, color: Colors.blueGrey),
-                const SizedBox(width: 8),
-                Text('Recent Sales', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            recentSalesAsync.when(
-              data: (groupedSales) {
-                if (groupedSales.isEmpty) {
-                  return const EmptyStateView(
-                    title: 'No sales yet',
-                    message: 'Sales challans will appear here.',
-                    icon: Icons.receipt_long_outlined,
-                  );
-                }
-
-                final listView = RefreshIndicator(
-                  color: AppColors.primary,
-                  onRefresh: () async => ref.refresh(recentSalesProvider.future),
-                  child: ListView.separated(
-                  shrinkWrap: !isWide, 
-                  physics: isWide ? const AlwaysScrollableScrollPhysics() : const NeverScrollableScrollPhysics(),
-                  itemCount: groupedSales.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final invoiceNo = groupedSales.keys.elementAt(index);
-                    final entries = groupedSales[invoiceNo]!;
-                    final firstEntry = entries.first;
-                    final totalSheets = entries.fold<int>(0, (sum, item) => sum + item.quantity);
-                    final isSelected = invoiceNo == _editingInvoiceNo;
-
-                    return ListTile(
-                      dense: true,
-                      tileColor: isSelected ? Colors.blue.shade50.withOpacity(0.5) : null,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      leading: CircleAvatar(
-                        radius: 20,
-                        backgroundColor: isSelected ? Colors.blue.shade100 : AppColors.primary.withAlpha(15),
-                        child: Icon(Icons.receipt, size: 20, color: isSelected ? Colors.blue.shade700 : AppColors.primary),
-                      ),
-                      title: Text(invoiceNo, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isSelected ? Colors.blue.shade900 : AppColors.textPrimary)),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 2),
-                          Text(firstEntry.partyName ?? 'Unknown Party', style: TextStyle(fontSize: 12, color: isSelected ? Colors.blue.shade700 : Colors.grey.shade700, fontWeight: FontWeight.w500)),
-                          Text('${firstEntry.date.toString().substring(0, 10)}  •  $totalSheets Sheets', style: TextStyle(fontSize: 11, color: isSelected ? Colors.blue.shade400 : Colors.grey.shade500)),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isSelected)
-                            IconButton(
-                              icon: const Icon(Icons.close, size: 18, color: Colors.red),
-                              tooltip: 'Cancel Edit',
-                              onPressed: _cancelEdit,
-                            ),
-                          IconButton(
-                            icon: Icon(isSelected ? Icons.edit : Icons.edit_document, size: 20, color: isSelected ? Colors.blue : Colors.blueGrey),
-                            onPressed: isSelected ? null : () {
-                               partiesAsync.whenData((parties) {
-                                  stockAsync.whenData((stock) {
-                                      _loadInvoiceForEdit(invoiceNo, entries, parties, stock);
-                                  });
-                               });
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.print, size: 20, color: AppColors.primary),
-                            onPressed: () async {
-                               try {
-                                 final activeShop = ref.read(activeShopProvider);
-                                 if (activeShop == null) {
-                                   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop data not loaded')));
-                                   return;
-                                 }
-
-                                 // Get data from providers. If still loading, wait or show message.
-                                 final parties = partiesAsync.value;
-                                 final stock = stockAsync.value;
-
-                                 if (parties == null || stock == null) {
-                                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data still loading, please wait...')));
-                                    return;
-                                 }
-
-                                 // Safe lookup for party
-                                 final party = parties.where((p) => p.id == firstEntry.partyId).firstOrNull ?? 
-                                              Party(
-                                                id: firstEntry.partyId, 
-                                                partyName: firstEntry.partyName ?? 'Unknown',
-                                                timeAdded: DateTime.now(),
-                                                shopId: firstEntry.shopId,
-                                              );
-
-                                 final challanLines = entries.map((e) {
-                                    // 1. Try metadata directly from the entry (fetched via joins in repository)
-                                    // 2. Fallback to searching stock cache if joins are missing/legacy
-                                    // 3. Absolute fallback to IDs
-                                    String bName = e.brandName ?? '';
-                                    String lName = e.locationName ?? '';
-                                    String dNo = e.designNo ?? '';
-
-                                    if (bName.isEmpty || lName.isEmpty || dNo.isEmpty) {
-                                      try {
-                                        final s = stock.firstWhere((s) =>
-                                            (s['products_design']?['id'] as int?) == e.designId &&
-                                            (s['locations']?['id'] as int?) == e.locationId);
-                                        
-                                        if (bName.isEmpty) {
-                                          bName = (s['products_design']?['product_head']?['folders']?['folder_name'] as String?) ??
-                                                  (s['products_design']?['product_head']?['product_name'] as String?) ?? '';
-                                        }
-                                        if (lName.isEmpty) lName = (s['locations']?['name'] as String?) ?? '';
-                                        if (dNo.isEmpty) dNo = (s['products_design']?['design_no'] as String?) ?? e.designId.toString();
-                                      } catch (_) {
-                                        // Still empty? Force format IDs
-                                        if (lName.isEmpty) lName = 'Loc#${e.locationId}';
-                                        if (dNo.isEmpty) dNo = 'Design#${e.designId}';
-                                      }
-                                    }
-
-                                    return ChallanLine(
-                                      brandName: bName,
-                                      locationName: lName,
-                                      designNo: dNo,
-                                      quantity: e.quantity,
-                                    );
-                                 }).toList();
-
-                                 await ref.read(printServiceProvider).printSalesInvoice(
-                                    shop: activeShop,
-                                    party: party,
-                                    invoiceNo: invoiceNo,
-                                    lines: challanLines,
-                                    date: firstEntry.date,
-                                 );
-                               } catch (e) {
-                                 if (context.mounted) {
-                                   ScaffoldMessenger.of(context).showSnackBar(
-                                     SnackBar(content: Text('Print Error: $e'), backgroundColor: Colors.red),
-                                   );
-                                 }
-                               }
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              );
-                return isWide ? Expanded(child: listView) : listView;
-              },
-              loading: () => const Center(child: Padding(padding: EdgeInsets.all(32.0), child: CircularProgressIndicator())),
-              error: (err, stack) => ErrorView(
-                error: err,
-                onRetry: () => ref.invalidate(groupedRecentSalesProvider),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    Widget recentSalesContent = _buildRecentSalesContent(isWide: isWide);
 
     return Scaffold(
       backgroundColor: _editingInvoiceNo != null ? const Color(0xFFF1F5F9) : AppColors.scaffoldBg, // Light slate in edit mode
@@ -982,36 +800,30 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             children: [
               const BackButton(color: AppColors.textPrimary),
               IconButton(
-                icon: const Icon(Icons.menu, color: AppColors.primary),
-                tooltip: 'Menu',
-                onPressed: () => Scaffold.of(context).openDrawer(),
+                icon: const Icon(Icons.history_rounded, color: AppColors.primary),
+                tooltip: 'Sales History',
+                onPressed: () => _showHistoryDialog(context),
               ),
             ],
           );
         }),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
+        centerTitle: true,
         title: Builder(builder: (context) {
           final isMobile = MediaQuery.of(context).size.width < 600;
+          final activeShop = ref.watch(activeShopProvider);
           return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Sales Challan', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: isMobile ? 18 : 20)),
-              if (ref.watch(activeShopProvider) != null)
-                Row(
-                  children: [
-                    const Icon(Icons.storefront_rounded, size: 14, color: AppColors.accent),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        ref.watch(activeShopProvider)!.shopName,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: isMobile ? 11 : 13, fontWeight: FontWeight.w600, color: AppColors.accent),
-                      ),
-                    ),
-                  ],
-                ),
+              if (activeShop != null)
+                Text(activeShop.shopName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
+              Text(
+                'Sales Entry', 
+                style: TextStyle(
+                  fontWeight: FontWeight.w900, 
+                  color: AppColors.textPrimary,
+                  fontSize: isMobile ? 18 : 20,
+                )
+              ),
             ],
           );
         }),
@@ -1047,6 +859,222 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
           if (_isSaving)
             const LoadingOverlay(message: 'Saving Invoice...'),
         ],
+      ),
+    );
+  }
+
+  void _showHistoryDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.scaffoldBg,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+               const SizedBox(height: 12),
+               Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+               const SizedBox(height: 8),
+               Expanded(
+                 child: SingleChildScrollView(
+                   controller: scrollController,
+                   child: _buildRecentSalesContent(isWide: false, isSheet: true),
+                 ),
+               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentSalesContent({bool isWide = false, bool isSheet = false}) {
+    final recentSalesAsync = ref.watch(groupedRecentSalesProvider);
+    final partiesAsync     = ref.watch(partiesProvider);
+    final stockAsync       = ref.watch(shopStockProvider);
+
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Colors.grey.shade200)),
+      margin: isSheet ? const EdgeInsets.all(8) : const EdgeInsets.all(16),
+      child: Padding(
+        padding: isSheet ? const EdgeInsets.all(16.0) : const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.history, color: Colors.blueGrey),
+                const SizedBox(width: 8),
+                Text('Recent Sales', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            recentSalesAsync.when(
+              data: (groupedSales) {
+                if (groupedSales.isEmpty) {
+                  return const EmptyStateView(
+                    title: 'No sales yet',
+                    message: 'Sales challans will appear here.',
+                    icon: Icons.receipt_long_outlined,
+                  );
+                }
+
+                final listView = RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () async => ref.refresh(recentSalesProvider.future),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(), // Managed by outer scrollable
+                    itemCount: groupedSales.length,
+                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final invoiceNo = groupedSales.keys.elementAt(index);
+                      final entries = groupedSales[invoiceNo]!;
+                      final firstEntry = entries.first;
+                      final totalSheets = entries.fold<int>(0, (sum, item) => sum + item.quantity);
+                      final isSelected = invoiceNo == _editingInvoiceNo;
+
+                      return ListTile(
+                        dense: true,
+                        tileColor: isSelected ? Colors.blue.shade50.withValues(alpha: 0.5) : null,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        leading: CircleAvatar(
+                          radius: 20,
+                          backgroundColor: isSelected ? Colors.blue.shade100 : AppColors.primary.withValues(alpha: 0.15),
+                          child: Icon(Icons.receipt, size: 20, color: isSelected ? Colors.blue.shade700 : AppColors.primary),
+                        ),
+                        title: Text(invoiceNo, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isSelected ? Colors.blue.shade900 : AppColors.textPrimary)),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 2),
+                            Text(firstEntry.partyName ?? 'Unknown Party', style: TextStyle(fontSize: 12, color: isSelected ? Colors.blue.shade700 : Colors.grey.shade700, fontWeight: FontWeight.w500)),
+                            Text('${firstEntry.date.toString().substring(0, 10)}  •  $totalSheets Sheets', style: TextStyle(fontSize: 11, color: isSelected ? Colors.blue.shade400 : Colors.grey.shade500)),
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isSelected)
+                              IconButton(
+                                icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                                tooltip: 'Cancel Edit',
+                                onPressed: () {
+                                  _cancelEdit();
+                                  if (isSheet) Navigator.pop(context);
+                                },
+                              ),
+                            IconButton(
+                              icon: Icon(isSelected ? Icons.edit : Icons.edit_document, size: 20, color: isSelected ? Colors.blue : Colors.blueGrey),
+                              onPressed: isSelected ? null : () {
+                                 partiesAsync.whenData((parties) {
+                                    stockAsync.whenData((stock) {
+                                        _loadInvoiceForEdit(invoiceNo, entries, parties, stock);
+                                        if (isSheet) Navigator.pop(context);
+                                    });
+                                 });
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.print, size: 20, color: AppColors.primary),
+                              onPressed: () async {
+                                 try {
+                                   final activeShop = ref.read(activeShopProvider);
+                                   if (activeShop == null) {
+                                     if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop data not loaded')));
+                                     return;
+                                   }
+
+                                   final parties = partiesAsync.value;
+                                   final stock = stockAsync.value;
+
+                                   if (parties == null || stock == null) {
+                                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data still loading, please wait...')));
+                                      return;
+                                   }
+
+                                   final party = parties.where((p) => p.id == firstEntry.partyId).firstOrNull ?? 
+                                                Party(
+                                                  id: firstEntry.partyId, 
+                                                  partyName: firstEntry.partyName ?? 'Unknown',
+                                                  timeAdded: DateTime.now(),
+                                                  shopId: firstEntry.shopId,
+                                                );
+
+                                   final challanLines = entries.map((e) {
+                                      String bName = e.brandName ?? '';
+                                      String lName = e.locationName ?? '';
+                                      String dNo = e.designNo ?? '';
+
+                                      if (bName.isEmpty || lName.isEmpty || dNo.isEmpty) {
+                                        try {
+                                          final s = stock.firstWhere((s) =>
+                                              (s['products_design']?['id'] as int?) == e.designId &&
+                                              (s['locations']?['id'] as int?) == e.locationId);
+                                          
+                                          if (bName.isEmpty) {
+                                            bName = (s['products_design']?['product_head']?['folders']?['folder_name'] as String?) ??
+                                                    (s['products_design']?['product_head']?['product_name'] as String?) ?? '';
+                                          }
+                                          if (lName.isEmpty) lName = (s['locations']?['name'] as String?) ?? '';
+                                          if (dNo.isEmpty) dNo = (s['products_design']?['design_no'] as String?) ?? e.designId.toString();
+                                        } catch (_) {
+                                          if (lName.isEmpty) lName = 'Loc#${e.locationId}';
+                                          if (dNo.isEmpty) dNo = 'Design#${e.designId}';
+                                        }
+                                      }
+
+                                      return ChallanLine(
+                                        brandName: bName,
+                                        locationName: lName,
+                                        designNo: dNo,
+                                        quantity: e.quantity,
+                                      );
+                                   }).toList();
+
+                                   await ref.read(printServiceProvider).printSalesInvoice(
+                                      shop: activeShop,
+                                      party: party,
+                                      invoiceNo: invoiceNo,
+                                      lines: challanLines,
+                                      date: firstEntry.date,
+                                   );
+                                 } catch (e) {
+                                   if (context.mounted) {
+                                     ScaffoldMessenger.of(context).showSnackBar(
+                                       SnackBar(content: Text('Print Error: $e'), backgroundColor: Colors.red),
+                                     );
+                                   }
+                                 }
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+                return isWide ? Expanded(child: listView) : listView;
+              },
+              loading: () => const Center(child: Padding(padding: EdgeInsets.all(32.0), child: CircularProgressIndicator())),
+              error: (err, stack) => ErrorView(
+                error: err,
+                onRetry: () => ref.invalidate(groupedRecentSalesProvider),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1088,266 +1116,303 @@ class _SaleItemRowState extends State<_SaleItemRow> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
+    final itemIndex = Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.12), shape: BoxShape.circle),
+      child: Text('${widget.index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+    );
+
+    final searchField = Autocomplete<Map<String, dynamic>>(
+      focusNode: widget.line.searchFocusNode,
+      textEditingController: widget.line.searchController,
+      displayStringForOption: (row) {
+        final d = (row['products_design']?['design_no'] as String?) ?? '';
+        final l = (row['locations']?['name'] as String?) ?? '';
+        final q = (row['quantity'] as int?) ?? 0;
+        return '$d  |  $l  |  $q';
+      },
+      optionsBuilder: (tv) {
+        final q = tv.text.toLowerCase();
+        if (q.isEmpty) {
+          return widget.availableStock.where((r) {
+            final pd = _getData(r['products_design']);
+            final loc = _getData(r['locations']);
+            final dId = (pd?['id'] as int?) ?? 0;
+            final lId = (loc?['id'] as int?) ?? 0;
+            return !widget.usedStockKeys.contains('${dId}_${lId}');
+          }).take(50);
+        }
+        return widget.availableStock.where((r) {
+          final pd = _getData(r['products_design']);
+          final loc = _getData(r['locations']);
+          final dId = (pd?['id'] as int?) ?? 0;
+          final lId = (loc?['id'] as int?) ?? 0;
+          final key = '${dId}_${lId}';
+          if (widget.line.stockRow != null && widget.line.designId == dId && widget.line.locationId == lId) {
+             // Allowed
+          } else if (widget.usedStockKeys.contains(key)) {
+            return false;
+          }
+          final searchKey = r['search_key'] as String?;
+          if (searchKey != null) return searchKey.contains(q);
+          final dNo = (pd?['design_no'] as String? ?? '').toLowerCase();
+          final lName = (loc?['name'] as String? ?? '').toLowerCase();
+          return dNo.contains(q) || lName.contains(q);
+        });
+      },
+      onSelected: widget.onSelected,
+      optionsViewBuilder: (context, onSel, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 10,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: 350, maxWidth: isMobile ? MediaQuery.of(context).size.width - 64 : 500),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    child: const Row(
+                      children: [
+                        Expanded(flex: 3, child: Text('Design No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
+                        Expanded(flex: 2, child: Text('Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
+                        SizedBox(width: 50, child: Text('Stock', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
+                      ],
+                    ),
+                  ),
+                  Flexible(
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (context, idx) {
+                        final row = options.elementAt(idx);
+                        final pd = _getData(row['products_design']);
+                        final loc = _getData(row['locations']);
+                        final dNo = (pd?['design_no'] as String?) ?? '';
+                        final lName = (loc?['name'] as String?) ?? '';
+                        final qty = (row['quantity'] as int?) ?? 0;
+
+                        return InkWell(
+                          onTap: () => onSel(row),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
+                            child: Row(
+                              children: [
+                                Expanded(flex: 3, child: Text(dNo, style: const TextStyle(fontWeight: FontWeight.w600))),
+                                Expanded(flex: 2, child: Text(lName, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))),
+                                SizedBox(
+                                  width: 50, 
+                                  child: Text('$qty', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, color: qty < 5 ? Colors.red : Colors.green))
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      fieldViewBuilder: (context, ctrl, focusNode, onSub) {
+        return TextFormField(
+          controller: ctrl,
+          focusNode: focusNode,
+          style: isMobile ? const TextStyle(fontSize: 14, fontWeight: FontWeight.w500) : null,
+          decoration: InputDecoration(
+            labelText: isMobile ? null : (isMobile ? 'Search Designs' : 'Search Design Numbers'),
+            hintText: isMobile ? 'Select Design / Location...' : 'Type to filter...',
+            isDense: true,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+            filled: true,
+            fillColor: Colors.white,
+            prefixIcon: isMobile 
+              ? Container(
+                  width: 36,
+                  margin: const EdgeInsets.only(right: 8),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
+                  ),
+                  child: Text('${widget.index + 1}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary, fontSize: 13)),
+                )
+              : Container(
+                  margin: const EdgeInsets.only(right: 8, left: 4),
+                  child: Icon(Icons.search_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.7)),
+                ),
+            prefixIconConstraints: isMobile ? const BoxConstraints(minWidth: 40, minHeight: 45) : const BoxConstraints(minWidth: 40, minHeight: 40),
+            suffixIcon: widget.line.stockRow != null
+                ? IconButton(
+                    icon: Icon(Icons.cancel_rounded, size: 18, color: Colors.grey.shade400),
+                    onPressed: () { 
+                      ctrl.clear(); 
+                      widget.onSelected({}); 
+                      setState(() { widget.line.stockRow = null; });
+                    },
+                  )
+                : null,
+            contentPadding: EdgeInsets.only(left: isMobile ? 0 : 16, right: 16, top: 14, bottom: 14),
+          ),
+        );
+      },
+    );
+
+    final qtyField = SizedBox(
+      width: isMobile ? double.infinity : 100,
+      child: TextFormField(
+        controller: widget.line.qtyController,
+        focusNode: widget.line.qtyFocusNode,
+        enabled: widget.line.stockRow != null,
+        textAlign: isMobile ? TextAlign.left : TextAlign.center,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+        decoration: InputDecoration(
+          hintText: '0',
+          helperText: isMobile ? (widget.line.stockRow != null ? 'Avail: ${widget.line.maxQuantity}' : null) : (widget.line.stockRow != null ? 'Max: ${widget.line.maxQuantity}' : null),
+          helperStyle: TextStyle(color: Colors.blue.shade600, fontWeight: FontWeight.bold, fontSize: 10),
+          isDense: true,
+          filled: true,
+          fillColor: widget.line.stockRow != null ? Colors.white : Colors.grey.shade50,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        ),
+        keyboardType: TextInputType.number,
+        onChanged: (v) {
+          if (v.isEmpty) {
+             widget.line.quantity = 0;
+             widget.onChanged();
+             return;
+          }
+          int q = int.tryParse(v) ?? 0;
+          if (q > widget.line.maxQuantity) {
+            q = widget.line.maxQuantity;
+            widget.line.qtyController.text = q.toString();
+            widget.line.qtyController.selection = TextSelection.fromPosition(TextPosition(offset: widget.line.qtyController.text.length));
+          }
+          widget.line.quantity = q;
+          widget.onChanged();
+        },
+      ),
+    );
+
+    final rateField = SizedBox(
+      width: isMobile ? double.infinity : 100,
+      child: TextFormField(
+        controller: widget.line.rateController,
+        enabled: widget.line.stockRow != null,
+        textAlign: isMobile ? TextAlign.left : TextAlign.center,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+        decoration: InputDecoration(
+          hintText: 'Rate',
+          isDense: true,
+          filled: true,
+          fillColor: widget.line.stockRow != null ? Colors.white : Colors.grey.shade50,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        ),
+        keyboardType: TextInputType.number,
+        onChanged: (v) => widget.onChanged(),
+      ),
+    );
+
+    Widget content;
+    if (isMobile) {
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row 1: Search + Delete
+          Row(
+            children: [
+              Expanded(child: searchField),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300, size: 22),
+                onPressed: widget.onRemove,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Row 2: Qty, Rate & Subtotal
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(flex: 3, child: qtyField),
+              const SizedBox(width: 10),
+              Expanded(flex: 4, child: rateField),
+              const SizedBox(width: 10),
+              if (widget.line.stockRow != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text('TOTAL', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                      Text('₹${widget.line.total}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary)),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ],
+      );
+    } else {
+      content = Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          itemIndex,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: searchField),
+                const SizedBox(width: 12),
+                qtyField,
+                const SizedBox(width: 12),
+                rateField,
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.delete_outline, color: Colors.red.shade300),
+            onPressed: widget.onRemove,
+          ),
+        ],
+      );
+    }
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.divider),
         boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 6, offset: const Offset(0, 2))],
       ),
-      child: Builder(builder: (context) {
-        final isMobile = MediaQuery.of(context).size.width < 600;
-
-        final itemIndex = Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.12), shape: BoxShape.circle),
-          child: Text('${widget.index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-        );
-
-        final searchField = Autocomplete<Map<String, dynamic>>(
-          initialValue: widget.line.stockRow != null
-              ? TextEditingValue(text: '${widget.line.designNo}  |  ${widget.line.locationName}  |  ${widget.line.maxQuantity}')
-              : TextEditingValue.empty,
-          displayStringForOption: (row) {
-            final d = (row['products_design']?['design_no'] as String?) ?? '';
-            final l = (row['locations']?['name'] as String?) ?? '';
-            final q = (row['quantity'] as int?) ?? 0;
-            return '$d  |  $l  |  $q';
-          },
-          optionsBuilder: (tv) {
-            final q = tv.text.toLowerCase();
-            if (q.isEmpty) {
-              return widget.availableStock.where((r) {
-                final pd = _getData(r['products_design']);
-                final loc = _getData(r['locations']);
-                final dId = (pd?['id'] as int?) ?? 0;
-                final lId = (loc?['id'] as int?) ?? 0;
-                return !widget.usedStockKeys.contains('${dId}_${lId}');
-              }).take(50);
-            }
-            return widget.availableStock.where((r) {
-              final pd = _getData(r['products_design']);
-              final loc = _getData(r['locations']);
-              final dId = (pd?['id'] as int?) ?? 0;
-              final lId = (loc?['id'] as int?) ?? 0;
-              final key = '${dId}_${lId}';
-              if (widget.line.stockRow != null && widget.line.designId == dId && widget.line.locationId == lId) {
-                 // Allowed
-              } else if (widget.usedStockKeys.contains(key)) {
-                return false;
-              }
-              final searchKey = r['search_key'] as String?;
-              if (searchKey != null) return searchKey.contains(q);
-              final dNo = (pd?['design_no'] as String? ?? '').toLowerCase();
-              final lName = (loc?['name'] as String? ?? '').toLowerCase();
-              return dNo.contains(q) || lName.contains(q);
-            });
-          },
-          onSelected: widget.onSelected,
-          optionsViewBuilder: (context, onSel, options) {
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                elevation: 10,
-                borderRadius: BorderRadius.circular(16),
-                clipBehavior: Clip.antiAlias,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: 350, maxWidth: isMobile ? MediaQuery.of(context).size.width - 64 : 500),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        child: const Row(
-                          children: [
-                            Expanded(flex: 3, child: Text('Design No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
-                            Expanded(flex: 2, child: Text('Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
-                            SizedBox(width: 50, child: Text('Stock', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary))),
-                          ],
-                        ),
-                      ),
-                      Flexible(
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (context, idx) {
-                            final row = options.elementAt(idx);
-                            final pd = _getData(row['products_design']);
-                            final loc = _getData(row['locations']);
-                            final dNo = (pd?['design_no'] as String?) ?? '';
-                            final lName = (loc?['name'] as String?) ?? '';
-                            final qty = (row['quantity'] as int?) ?? 0;
-
-                            return InkWell(
-                              onTap: () => onSel(row),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
-                                child: Row(
-                                  children: [
-                                    Expanded(flex: 3, child: Text(dNo, style: const TextStyle(fontWeight: FontWeight.w600))),
-                                    Expanded(flex: 2, child: Text(lName, style: TextStyle(fontSize: 12, color: Colors.grey.shade600))),
-                                    SizedBox(
-                                      width: 50, 
-                                      child: Text('$qty', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold, color: qty < 5 ? Colors.red : Colors.green))
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-          fieldViewBuilder: (context, ctrl, focusNode, onSub) {
-            return Consumer(builder: (context, ref, _) {
-              final stockStatus = ref.watch(shopStockProvider);
-              final isLoading = stockStatus.isLoading;
-              final isError = stockStatus.hasError;
-
-              return TextFormField(
-                controller: ctrl,
-                focusNode: focusNode,
-                decoration: InputDecoration(
-                  labelText: isLoading ? 'Fetching...' : (isError ? 'Error loading stock' : (isMobile ? 'Search Designs' : 'Search Design Numbers')),
-                  hintText: isMobile ? 'Type Design...' : 'Type to filter...',
-                  isDense: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade200)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                  filled: true,
-                  fillColor: (isLoading || isError) ? Colors.grey.shade50 : Colors.white,
-                  prefixIcon: isLoading 
-                      ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
-                      : Icon(isError ? Icons.error_outline : Icons.manage_search_rounded, size: isMobile ? 20 : 24, color: isError ? Colors.red : AppColors.accent),
-                  suffixIcon: widget.line.stockRow != null
-                      ? IconButton(
-                          icon: const Icon(Icons.close, size: 16),
-                          onPressed: () { 
-                            ctrl.clear(); 
-                            widget.onSelected({}); 
-                            setState(() { widget.line.stockRow = null; });
-                          },
-                        )
-                      : null,
-                ),
-              );
-            });
-          },
-        );
-
-        final qtyField = SizedBox(
-          width: isMobile ? double.infinity : 100,
-          child: TextFormField(
-            controller: widget.line.qtyController,
-            enabled: widget.line.stockRow != null,
-            textAlign: TextAlign.center,
-            decoration: InputDecoration(
-              labelText: 'Qty',
-              helperText: widget.line.stockRow != null ? 'Max: ${widget.line.maxQuantity}' : null,
-              helperStyle: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11),
-              isDense: true,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-            ),
-            keyboardType: TextInputType.number,
-            onChanged: (v) {
-              if (v.isEmpty) {
-                 widget.line.quantity = 0;
-                 widget.onChanged();
-                 return;
-              }
-              int q = int.tryParse(v) ?? 0;
-              if (q > widget.line.maxQuantity) {
-                q = widget.line.maxQuantity;
-                widget.line.qtyController.text = q.toString();
-                widget.line.qtyController.selection = TextSelection.fromPosition(TextPosition(offset: widget.line.qtyController.text.length));
-              }
-              widget.line.quantity = q;
-              widget.onChanged();
-            },
-          ),
-        );
-
-        final rateField = SizedBox(
-          width: isMobile ? double.infinity : 100,
-          child: TextFormField(
-            controller: widget.line.rateController,
-            enabled: widget.line.stockRow != null,
-            textAlign: TextAlign.center,
-            decoration: InputDecoration(
-              labelText: 'Rate',
-              isDense: true,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-            ),
-            keyboardType: TextInputType.number,
-            onChanged: (v) => widget.onChanged(),
-          ),
-        );
-
-        if (isMobile) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  itemIndex,
-                  const SizedBox(width: 12),
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(Icons.delete_outline, color: Colors.red.shade300),
-                    onPressed: widget.onRemove,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              searchField,
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: qtyField),
-                  const SizedBox(width: 12),
-                  Expanded(child: rateField),
-                ],
-              ),
-            ],
-          );
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            itemIndex,
-            const SizedBox(width: 16),
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: searchField),
-                  const SizedBox(width: 12),
-                  qtyField,
-                  const SizedBox(width: 12),
-                  rateField,
-                ],
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.delete_outline, color: Colors.red.shade300),
-              onPressed: widget.onRemove,
-            ),
-          ],
-        );
-      }),
+      child: content,
     );
   }
 }

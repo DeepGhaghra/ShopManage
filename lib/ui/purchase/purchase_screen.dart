@@ -353,20 +353,13 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         title: Builder(builder: (context) {
           final isMobile = MediaQuery.of(context).size.width < 600;
+          final activeShop = ref.watch(activeShopProvider);
           return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Purchase Entry', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: isMobile ? 18 : 20)),
-              if (ref.watch(activeShopProvider) != null)
-                Row(children: [
-                  const Icon(Icons.storefront_rounded, size: 13, color: AppColors.accent),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(ref.watch(activeShopProvider)!.shopName,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: isMobile ? 10 : 12, color: AppColors.accent, fontWeight: FontWeight.w600)),
-                  ),
-                ]),
+              if (activeShop != null)
+                Text(activeShop.shopName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
+              Text('Purchase Entry', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.textPrimary, fontSize: isMobile ? 18 : 20)),
             ],
           );
         }),

@@ -137,7 +137,7 @@ class PrintService {
                                   child: pw.Column(
                                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                                     children: [
-                                      pw.Text('M/s: ${party.partyName.toUpperCase()}',
+                                      pw.Text('M/s: ${party.partyName.split(RegExp(r"[/\\]")).last.trim().toUpperCase()}',
                                         style: cellStyle(f: fontBold, size: headerSize),
                                       ),
                                       pw.SizedBox(height: 2),

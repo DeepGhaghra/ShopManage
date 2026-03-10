@@ -96,7 +96,6 @@ final shopStockProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async
         
   final data = List<Map<String, dynamic>>.from(response);
   for (var r in data) {
-    // Robustly get joined data which can be Map or List
     Map<String, dynamic>? getData(dynamic d) {
       if (d == null) return null;
       if (d is List) return d.isEmpty ? null : d.first as Map<String, dynamic>;
@@ -106,6 +105,10 @@ final shopStockProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async
 
     final pd = getData(r['products_design']);
     final loc = getData(r['locations']);
+    
+    // Normalize the record with the extracted maps
+    r['products_design'] = pd;
+    r['locations'] = loc;
     
     final d = (pd?['design_no'] as String? ?? '').toLowerCase();
     final l = (loc?['name'] as String? ?? '').toLowerCase();

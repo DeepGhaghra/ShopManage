@@ -55,24 +55,16 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (activeShop != null)
+                Text(activeShop.shopName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
               Text(
-                'Manage Parties', 
+                'Parties', 
                 style: TextStyle(
-                  fontWeight: FontWeight.w800, 
+                  fontWeight: FontWeight.w900, 
                   color: AppColors.textPrimary,
-                  fontSize: isMobile ? 16 : 20,
+                  fontSize: isMobile ? 18 : 20,
                 )
               ),
-              if (activeShop != null)
-                Text(
-                  activeShop.shopName,
-                  style: TextStyle(
-                    fontSize: isMobile ? 9 : 11, 
-                    fontWeight: FontWeight.bold, 
-                    color: AppColors.accent, 
-                    letterSpacing: 0.5
-                  ),
-                ),
             ],
           );
         }),
@@ -261,9 +253,20 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
         builder: (context, setState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: Text(
-              party == null ? 'New Party' : 'Edit Party',
-              style: const TextStyle(fontWeight: FontWeight.w800),
+            title: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (ref.watch(activeShopProvider) != null)
+                  Text(
+                    'SHOP: ${ref.watch(activeShopProvider)!.shopName.toUpperCase()}',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.primary, letterSpacing: 0.5),
+                  ),
+                Text(
+                  party == null ? 'New Party' : 'Edit Party',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                ),
+              ],
             ),
             content: SingleChildScrollView(
               child: Form(

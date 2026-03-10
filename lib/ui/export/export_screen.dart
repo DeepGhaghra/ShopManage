@@ -443,37 +443,17 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (activeShop != null)
+              Text(activeShop.shopName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
             Text(
-              activeShop.shopName,
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-            ),
-            const Text(
               'Export Center',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary, letterSpacing: 0.5),
+              style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.textPrimary, fontSize: MediaQuery.of(context).size.width < 600 ? 18 : 20),
             ),
           ],
         ),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.store, color: AppColors.primary),
-            onPressed: () {
-              ref.read(activeShopProvider.notifier).setShop(null);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('🔄 Switched to shop selection'),
-                  backgroundColor: AppColors.primaryDim,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
-            tooltip: 'Switch Shop',
-          ),
-        ],
       ),
       drawer: const AppDrawer(currentRoute: '/export'),
       body: Stack(

@@ -7,60 +7,22 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'log_repository.dart';
+import '../models/log_entry.dart';
+import 'core_providers.dart';
 
-// ─── Log Level ──────────────────────────────────────────────────────────────
-enum LogLevel { info, success, warning, error }
-
-// ─── Log Entry ──────────────────────────────────────────────────────────────
-class LogEntry {
-  final DateTime timestamp;
-  final LogLevel level;
-  final String module;   // e.g. 'Sales', 'Stock', 'Auth', 'Purchase'
-  final String message;
-  final String? details; // optional stack trace or extra info
-
-  LogEntry({
-    required this.level,
-    required this.module,
-    required this.message,
-    this.details,
-  }) : timestamp = DateTime.now();
-
-  Map<String, dynamic> toJson() => {
-    'timestamp': timestamp.toIso8601String(),
-    'level': level.name,
-    'module': module,
-    'message': message,
-    if (details != null) 'details': details,
-  };
-
-  factory LogEntry.fromJson(Map<String, dynamic> json) {
-    return LogEntry(
-      level: LogLevel.values.firstWhere(
-        (e) => e.name == json['level'],
-        orElse: () => LogLevel.info,
-      ),
-      module: (json['module'] as String?) ?? 'Unknown',
-      message: (json['message'] as String?) ?? '',
-      details: json['details']?.toString(),
-    );
-  }
-
-  String get formattedTime => DateFormat('HH:mm:ss').format(timestamp);
-  String get formattedDate => DateFormat('dd MMM yyyy').format(timestamp);
-  String get fullFormatted => DateFormat('dd MMM yyyy • HH:mm:ss').format(timestamp);
-
-  @override
-  String toString() => '[$fullFormatted] [${level.name.toUpperCase()}] [$module] $message${details != null ? '\n  → $details' : ''}';
-}
+export '../models/log_entry.dart';
 
 // ─── Log Service ────────────────────────────────────────────────────────────
 class LogService {
   static const int _maxInMemoryLogs = 500;
   final List<LogEntry> _logs = [];
   File? _logFile;
+  LogRepository? _remoteRepo;
   bool _initialized = false;
   int _version = 0; // Incremented on every log to allow UI reactivity
+
+  LogService([this._remoteRepo]);
 
   /// The current version stamp. UI can poll or watch this to know logs changed.
   int get version => _version;
@@ -73,6 +35,18 @@ class LogService {
   int get errorCount => _logs.where((l) => l.level == LogLevel.error).length;
   int get warningCount => _logs.where((l) => l.level == LogLevel.warning).length;
   int get successCount => _logs.where((l) => l.level == LogLevel.success).length;
+
+  /// Fetch remote logs from Supabase
+  Future<void> syncRemoteLogs() async {
+    if (_remoteRepo == null) return;
+    
+    final remoteLogs = await _remoteRepo!.fetchRemoteLogs();
+    if (remoteLogs.isNotEmpty) {
+      _logs.clear();
+      _logs.addAll(remoteLogs);
+      _version++;
+    }
+  }
 
   /// Initialize file-based logging (skipped on web)
   Future<void> init() async {
@@ -114,23 +88,31 @@ class LogService {
     } else {
       _log(LogLevel.info, 'System', 'Log service initialized (Web - in-memory only)');
     }
+    
+    // Auto-sync initial logs if remote repo is there
+    syncRemoteLogs();
   }
 
   // ── Core log method ──────────────────────────────────────────────────────
   void _log(LogLevel level, String module, String message, [String? details]) {
     final entry = LogEntry(level: level, module: module, message: message, details: details);
-    _logs.add(entry);
-
-    // Trim old logs to prevent memory issues
-    if (_logs.length > _maxInMemoryLogs) {
-      _logs.removeRange(0, _logs.length - _maxInMemoryLogs);
+    
+    // Add to in-memory (and stay consistent if we sync later)
+    if (_logs.length >= _maxInMemoryLogs) {
+      _logs.removeAt(_logs.length - 1); // Remove oldest
     }
+    _logs.insert(0, entry); // Add to top for local freshness
 
-    // Write to file (non-blocking)
+    // Write to file (local persistence)
     if (_logFile != null && !kIsWeb) {
       _logFile!.writeAsString('${jsonEncode(entry.toJson())}\n', mode: FileMode.append).catchError((e) {
         if (_shouldPrint) debugPrint('Log write error: $e');
       });
+    }
+
+    // Remote logging to Supabase
+    if (_remoteRepo != null) {
+      _remoteRepo!.pushRemoteLog(entry);
     }
 
     // Also print in debug mode
@@ -202,7 +184,12 @@ class LogService {
   }
 }
 
-// ─── Provider ───────────────────────────────────────────────────────────────
+// ─── Providers ──────────────────────────────────────────────────────────────
+final logRepositoryProvider = Provider<LogRepository>((ref) {
+  return LogRepository(ref.watch(supabaseClientProvider));
+});
+
 final logServiceProvider = Provider<LogService>((ref) {
-  return LogService();
+  // Use a specialized factory to ensure it's a singleton and repo is injected
+  return LogService(ref.watch(logRepositoryProvider));
 });

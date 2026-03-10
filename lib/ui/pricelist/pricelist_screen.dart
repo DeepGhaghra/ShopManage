@@ -135,24 +135,16 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (activeShop != null)
+                Text(activeShop.shopName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
               Text(
-                'Party Pricelist', 
+                'Price List', 
                 style: TextStyle(
-                  fontWeight: FontWeight.w800, 
+                  fontWeight: FontWeight.w900, 
                   color: AppColors.textPrimary,
-                  fontSize: isMobile ? 16 : 20,
+                  fontSize: isMobile ? 18 : 20,
                 )
               ),
-              if (activeShop != null)
-                Text(
-                  activeShop.shopName,
-                  style: TextStyle(
-                    fontSize: isMobile ? 9 : 11, 
-                    fontWeight: FontWeight.bold, 
-                    color: AppColors.accent, 
-                    letterSpacing: 0.5
-                  ),
-                ),
             ],
           );
         }),

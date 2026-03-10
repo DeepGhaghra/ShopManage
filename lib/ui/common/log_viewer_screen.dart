@@ -121,6 +121,17 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
           );
         }),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.sync, color: AppColors.primary),
+            tooltip: 'Sync Remote Logs',
+            onPressed: () async {
+              await logService.syncRemoteLogs();
+              if (mounted) setState(() {});
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Remote logs synced')),
+              );
+            },
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppColors.textPrimary),
             onSelected: (val) {
@@ -277,6 +288,13 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
                                                   style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color, letterSpacing: 0.5),
                                                 ),
                                               ),
+                                              if (log.userEmail != null) ...[
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'by ${log.userEmail}', 
+                                                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontStyle: FontStyle.italic),
+                                                ),
+                                              ],
                                               const Spacer(),
                                               Text(
                                                 log.fullFormatted,
@@ -366,6 +384,7 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
                     _DetailRow('Time', log.fullFormatted),
                     _DetailRow('Module', log.module),
                     _DetailRow('Message', log.message),
+                    if (log.userEmail != null) _DetailRow('User', log.userEmail!),
                     if (log.details != null) ...[
                       const SizedBox(height: 12),
                       const Text('Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),

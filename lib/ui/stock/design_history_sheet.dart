@@ -57,7 +57,7 @@ class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
+                        color: AppColors.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.history_rounded, color: AppColors.primary),
@@ -191,14 +191,14 @@ class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
                         final isPositive = sign == '+';
                         final displayQty = '${isPositive ? "+" : "-"}$absQty';
                         
-                        final bgColor = color.withValues(alpha: 0.1);
+                        final bgColor = color.withOpacity(0.1);
 
                         return Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))
+                              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))
                             ],
                             border: Border.all(color: Colors.grey.shade100),
                           ),

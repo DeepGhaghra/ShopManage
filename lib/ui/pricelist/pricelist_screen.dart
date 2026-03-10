@@ -334,6 +334,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                             defaultRate: defaultRate,
                             controller: controller,
                             isModified: partyRate != null,
+                            initialValue: displayValue,
                             onSave: () => _selectedParty != null 
                               ? _savePrice(prodId, _priceControllers[prodId]!.text)
                               : ScaffoldMessenger.of(context).showSnackBar(
@@ -385,6 +386,7 @@ class _ProductPriceCard extends StatelessWidget {
   final int defaultRate;
   final TextEditingController controller;
   final bool isModified;
+  final String initialValue;
   final VoidCallback onSave;
 
   const _ProductPriceCard({
@@ -393,6 +395,7 @@ class _ProductPriceCard extends StatelessWidget {
     required this.defaultRate,
     required this.controller,
     required this.isModified,
+    required this.initialValue,
     required this.onSave,
   });
 
@@ -453,31 +456,43 @@ class _ProductPriceCard extends StatelessWidget {
             const SizedBox(width: 12),
             SizedBox(
               width: 115,
-              child: TextFormField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
-                  color: isModified ? AppColors.primary : Colors.blueGrey.shade900,
-                ),
-                onFieldSubmitted: (_) => onSave(),
-                decoration: InputDecoration(
-                  prefixText: '₹',
-                  prefixStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.normal, fontSize: 13),
-                  isDense: true,
-                  filled: true,
-                  fillColor: isModified ? AppColors.primary.withAlpha(5) : const Color(0xFFF8FAFC),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  suffixIcon: IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    icon: Icon(Icons.check_circle_outline_rounded, color: isModified ? AppColors.primary : Colors.grey.shade300, size: 20),
-                    onPressed: onSave,
-                  ),
-                ),
+              child: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (context, val, _) {
+                  final isDirty = val.text != initialValue;
+                  return TextFormField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                      color: isDirty ? AppColors.success : (isModified ? AppColors.primary : Colors.blueGrey.shade900),
+                    ),
+                    onFieldSubmitted: (_) => onSave(),
+                    decoration: InputDecoration(
+                      prefixText: '₹',
+                      prefixStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.normal, fontSize: 13),
+                      isDense: true,
+                      filled: true,
+                      fillColor: isDirty ? AppColors.success.withValues(alpha: 0.05) : (isModified ? AppColors.primary.withAlpha(5) : const Color(0xFFF8FAFC)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: isDirty ? const BorderSide(color: AppColors.success, width: 1) : BorderSide.none),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: isDirty ? const BorderSide(color: AppColors.success, width: 1) : BorderSide.none),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.success, width: 2)),
+                      suffixIcon: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        icon: Icon(
+                          isDirty ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded, 
+                          color: isDirty ? AppColors.success : (isModified ? AppColors.primary : Colors.grey.shade300), 
+                          size: 20
+                        ),
+                        onPressed: onSave,
+                      ),
+                    ),
+                  );
+                }
               ),
             ),
           ],

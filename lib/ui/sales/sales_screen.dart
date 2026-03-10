@@ -800,9 +800,9 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             children: [
               const BackButton(color: AppColors.textPrimary),
               IconButton(
-                icon: const Icon(Icons.history_rounded, color: AppColors.primary),
-                tooltip: 'Sales History',
-                onPressed: () => _showHistoryDialog(context),
+                icon: const Icon(Icons.menu_rounded, color: AppColors.textPrimary),
+                tooltip: 'Menu',
+                onPressed: () => Scaffold.of(context).openDrawer(),
               ),
             ],
           );
@@ -840,7 +840,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(flex: 5, child: SingleChildScrollView(child: formContent)),
-                        Expanded(flex: 2, child: recentSalesContent), // Removed outer SingleChildScrollView for Desktop performance
+                        Expanded(flex: 2, child: recentSalesContent), 
                       ],
                     )
                   : SingleChildScrollView(
@@ -863,33 +863,25 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     );
   }
 
-  void _showHistoryDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.8,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (_, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: AppColors.scaffoldBg,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  Widget _buildActionButton({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+          decoration: BoxDecoration(
+            color: onTap == null ? Colors.grey.shade100 : color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: onTap == null ? Colors.transparent : color.withValues(alpha: 0.3), width: 1),
           ),
-          child: Column(
-            children: [
-               const SizedBox(height: 12),
-               Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-               const SizedBox(height: 8),
-               Expanded(
-                 child: SingleChildScrollView(
-                   controller: scrollController,
-                   child: _buildRecentSalesContent(isWide: false, isSheet: true),
-                 ),
-               ),
-            ],
-          ),
+          child: Icon(icon, size: 15, color: onTap == null ? Colors.grey.shade400 : color),
         ),
       ),
     );
@@ -906,7 +898,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Colors.grey.shade200)),
       margin: isSheet ? const EdgeInsets.all(8) : const EdgeInsets.all(16),
       child: Padding(
-        padding: isSheet ? const EdgeInsets.all(16.0) : const EdgeInsets.all(24.0),
+        padding: isSheet ? const EdgeInsets.all(12.0) : const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -932,11 +924,10 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                 final listView = RefreshIndicator(
                   color: AppColors.primary,
                   onRefresh: () async => ref.refresh(recentSalesProvider.future),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(), // Managed by outer scrollable
+                  child: ListView.builder(
+                    shrinkWrap: !isWide,
+                    physics: isWide ? const AlwaysScrollableScrollPhysics() : const NeverScrollableScrollPhysics(), // Scrollable on Desktop
                     itemCount: groupedSales.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final invoiceNo = groupedSales.keys.elementAt(index);
                       final entries = groupedSales[invoiceNo]!;
@@ -944,120 +935,180 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                       final totalSheets = entries.fold<int>(0, (sum, item) => sum + item.quantity);
                       final isSelected = invoiceNo == _editingInvoiceNo;
 
-                      return ListTile(
-                        dense: true,
-                        tileColor: isSelected ? Colors.blue.shade50.withValues(alpha: 0.5) : null,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        leading: CircleAvatar(
-                          radius: 20,
-                          backgroundColor: isSelected ? Colors.blue.shade100 : AppColors.primary.withValues(alpha: 0.15),
-                          child: Icon(Icons.receipt, size: 20, color: isSelected ? Colors.blue.shade700 : AppColors.primary),
-                        ),
-                        title: Text(invoiceNo, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isSelected ? Colors.blue.shade900 : AppColors.textPrimary)),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 2),
-                            Text(firstEntry.partyName ?? 'Unknown Party', style: TextStyle(fontSize: 12, color: isSelected ? Colors.blue.shade700 : Colors.grey.shade700, fontWeight: FontWeight.w500)),
-                            Text('${firstEntry.date.toString().substring(0, 10)}  •  $totalSheets Sheets', style: TextStyle(fontSize: 11, color: isSelected ? Colors.blue.shade400 : Colors.grey.shade500)),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.blue.shade50.withValues(alpha: 0.5) : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected ? Colors.blue.shade300 : Colors.grey.shade200,
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                          boxShadow: [
+                            if (!isSelected)
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2)),
                           ],
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (isSelected)
-                              IconButton(
-                                icon: const Icon(Icons.close, size: 18, color: Colors.red),
-                                tooltip: 'Cancel Edit',
-                                onPressed: () {
-                                  _cancelEdit();
-                                  if (isSheet) Navigator.pop(context);
-                                },
-                              ),
-                            IconButton(
-                              icon: Icon(isSelected ? Icons.edit : Icons.edit_document, size: 20, color: isSelected ? Colors.blue : Colors.blueGrey),
-                              onPressed: isSelected ? null : () {
-                                 partiesAsync.whenData((parties) {
-                                    stockAsync.whenData((stock) {
-                                        _loadInvoiceForEdit(invoiceNo, entries, parties, stock);
-                                        if (isSheet) Navigator.pop(context);
-                                    });
-                                 });
-                              },
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.receipt_rounded, size: 12, color: isSelected ? Colors.blue.shade700 : Colors.blueGrey.shade600),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        invoiceNo, 
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: isSelected ? Colors.blue.shade900 : Colors.blueGrey.shade800)
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  firstEntry.date.toString().substring(0, 10), 
+                                  style: TextStyle(fontSize: 10.5, color: Colors.grey.shade500, fontWeight: FontWeight.w600)
+                                ),
+                              ],
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.print, size: 20, color: AppColors.primary),
-                              onPressed: () async {
-                                 try {
-                                   final activeShop = ref.read(activeShopProvider);
-                                   if (activeShop == null) {
-                                     if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop data not loaded')));
-                                     return;
-                                   }
-
-                                   final parties = partiesAsync.value;
-                                   final stock = stockAsync.value;
-
-                                   if (parties == null || stock == null) {
-                                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data still loading, please wait...')));
-                                      return;
-                                   }
-
-                                   final party = parties.where((p) => p.id == firstEntry.partyId).firstOrNull ?? 
-                                                Party(
-                                                  id: firstEntry.partyId, 
-                                                  partyName: firstEntry.partyName ?? 'Unknown',
-                                                  timeAdded: DateTime.now(),
-                                                  shopId: firstEntry.shopId,
-                                                );
-
-                                   final challanLines = entries.map((e) {
-                                      String bName = e.brandName ?? '';
-                                      String lName = e.locationName ?? '';
-                                      String dNo = e.designNo ?? '';
-
-                                      if (bName.isEmpty || lName.isEmpty || dNo.isEmpty) {
-                                        try {
-                                          final s = stock.firstWhere((s) =>
-                                              (s['products_design']?['id'] as int?) == e.designId &&
-                                              (s['locations']?['id'] as int?) == e.locationId);
-                                          
-                                          if (bName.isEmpty) {
-                                            bName = (s['products_design']?['product_head']?['folders']?['folder_name'] as String?) ??
-                                                    (s['products_design']?['product_head']?['product_name'] as String?) ?? '';
-                                          }
-                                          if (lName.isEmpty) lName = (s['locations']?['name'] as String?) ?? '';
-                                          if (dNo.isEmpty) dNo = (s['products_design']?['design_no'] as String?) ?? e.designId.toString();
-                                        } catch (_) {
-                                          if (lName.isEmpty) lName = 'Loc#${e.locationId}';
-                                          if (dNo.isEmpty) dNo = 'Design#${e.designId}';
-                                        }
-                                      }
-
-                                      return ChallanLine(
-                                        brandName: bName,
-                                        locationName: lName,
-                                        designNo: dNo,
-                                        quantity: e.quantity,
-                                      );
-                                   }).toList();
-
-                                   await ref.read(printServiceProvider).printSalesInvoice(
-                                      shop: activeShop,
-                                      party: party,
-                                      invoiceNo: invoiceNo,
-                                      lines: challanLines,
-                                      date: firstEntry.date,
-                                   );
-                                 } catch (e) {
-                                   if (context.mounted) {
-                                     ScaffoldMessenger.of(context).showSnackBar(
-                                       SnackBar(content: Text('Print Error: $e'), backgroundColor: Colors.red),
-                                     );
-                                   }
-                                 }
-                              },
+                            const SizedBox(height: 5),
+                            Text(
+                              firstEntry.partyName ?? 'Unknown Party', 
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textPrimary), 
+                              maxLines: 1, 
+                              overflow: TextOverflow.ellipsis
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('TOTAL SHEETS : ', style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    Text(
+                                      '$totalSheets', 
+                                      style: TextStyle(color: Colors.blueGrey.shade800, fontSize: 13, fontWeight: FontWeight.w900)
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isSelected)
+                                      _buildActionButton(
+                                        icon: Icons.close,
+                                        color: Colors.red.shade600,
+                                        tooltip: 'Cancel Edit',
+                                        onTap: () {
+                                          _cancelEdit();
+                                          if (isSheet) Navigator.pop(context);
+                                        },
+                                      ),
+                                    if (isSelected) const SizedBox(width: 6),
+                                    
+                                    _buildActionButton(
+                                      icon: isSelected ? Icons.edit : Icons.edit_document,
+                                      color: isSelected ? Colors.blue.shade700 : Colors.blue.shade400,
+                                      tooltip: 'Edit Invoice',
+                                      onTap: isSelected ? null : () {
+                                        partiesAsync.whenData((parties) {
+                                           stockAsync.whenData((stock) {
+                                               _loadInvoiceForEdit(invoiceNo, entries, parties, stock);
+                                               if (isSheet) Navigator.pop(context);
+                                           });
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(width: 4),
+                                    _buildActionButton(
+                                      icon: Icons.print_rounded,
+                                      color: Colors.teal.shade600,
+                                      tooltip: 'Print Invoice',
+                                      onTap: () async {
+                                         try {
+                                           final activeShop = ref.read(activeShopProvider);
+                                           if (activeShop == null) {
+                                             if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop data not loaded')));
+                                             return;
+                                           }
+        
+                                           final parties = partiesAsync.value;
+                                           final stock = stockAsync.value;
+        
+                                           if (parties == null || stock == null) {
+                                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data still loading, please wait...')));
+                                              return;
+                                           }
+        
+                                           final party = parties.where((p) => p.id == firstEntry.partyId).firstOrNull ?? 
+                                                        Party(
+                                                          id: firstEntry.partyId, 
+                                                          partyName: firstEntry.partyName ?? 'Unknown',
+                                                          timeAdded: DateTime.now(),
+                                                          shopId: firstEntry.shopId,
+                                                        );
+        
+                                           final challanLines = entries.map((e) {
+                                              String bName = e.brandName ?? '';
+                                              String lName = e.locationName ?? '';
+                                              String dNo = e.designNo ?? '';
+        
+                                              if (bName.isEmpty || lName.isEmpty || dNo.isEmpty) {
+                                                try {
+                                                  final s = stock.firstWhere((s) =>
+                                                      (s['products_design']?['id'] as int?) == e.designId &&
+                                                      (s['locations']?['id'] as int?) == e.locationId);
+                                                  
+                                                  if (bName.isEmpty) {
+                                                    bName = (s['products_design']?['product_head']?['folders']?['folder_name'] as String?) ??
+                                                            (s['products_design']?['product_head']?['product_name'] as String?) ?? '';
+                                                  }
+                                                  if (lName.isEmpty) lName = (s['locations']?['name'] as String?) ?? '';
+                                                  if (dNo.isEmpty) dNo = (s['products_design']?['design_no'] as String?) ?? e.designId.toString();
+                                                } catch (_) {
+                                                  if (lName.isEmpty) lName = 'Loc#${e.locationId}';
+                                                  if (dNo.isEmpty) dNo = 'Design#${e.designId}';
+                                                }
+                                              }
+        
+                                              return ChallanLine(
+                                                brandName: bName,
+                                                locationName: lName,
+                                                designNo: dNo,
+                                                quantity: e.quantity,
+                                              );
+                                           }).toList();
+        
+                                           await ref.read(printServiceProvider).printSalesInvoice(
+                                              shop: activeShop,
+                                              party: party,
+                                              invoiceNo: invoiceNo,
+                                              lines: challanLines,
+                                              date: firstEntry.date,
+                                           );
+                                         } catch (e) {
+                                           if (context.mounted) {
+                                             ScaffoldMessenger.of(context).showSnackBar(
+                                               SnackBar(content: Text('Print Error: $e'), backgroundColor: Colors.red),
+                                             );
+                                           }
+                                         }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),

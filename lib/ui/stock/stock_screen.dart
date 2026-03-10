@@ -154,7 +154,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                           Builder(builder: (context) {
                             final chips = [
                               _FilterChip(
-                                label: 'Design NO',
+                                label: 'Design No',
                                 isSelected: _filterMode == 'design',
                                 onTap: () => setState(() => _filterMode = 'design'),
                               ),
@@ -539,6 +539,7 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
     required void Function(T item) onSelected,
     required String Function(T) displayStringForOption,
     void Function(T item)? onEditOption,
+    VoidCallback? onClear,
   }) {
     return Autocomplete<T>(
       initialValue: TextEditingValue(text: initialValue ?? ''),
@@ -548,13 +549,26 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
       },
       onSelected: onSelected,
       fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-        return TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: _inputDecoration(label, icon).copyWith(
-            suffixIcon: const Icon(Icons.arrow_drop_down_rounded),
-          ),
-          onFieldSubmitted: (String value) => onFieldSubmitted(),
+        return ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, child) {
+            return TextFormField(
+              controller: controller,
+              focusNode: focusNode,
+              decoration: _inputDecoration(label, icon).copyWith(
+                suffixIcon: value.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.cancel_rounded, size: 18, color: Colors.grey),
+                        onPressed: () {
+                          controller.clear();
+                          onClear?.call();
+                        },
+                      )
+                    : const Icon(Icons.arrow_drop_down_rounded, color: Colors.grey),
+              ),
+              onFieldSubmitted: (String value) => onFieldSubmitted(),
+            );
+          },
         );
       },
       optionsViewBuilder: (context, onSelected, options) {
@@ -678,6 +692,7 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
                       suggestions: (query) => heads.where((h) => h.productName.toLowerCase().contains(query.toLowerCase())),
                       onSelected: (head) => setState(() => _selectedProductHead = head),
                       displayStringForOption: (head) => head.productName,
+                      onClear: () => setState(() => _selectedProductHead = null),
                     ),
                     loading: () => const LinearProgressIndicator(),
                     error: (e, _) => Text('Error loading: $e'),
@@ -730,6 +745,10 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
                       onEditOption: (loc) {
                         _showRenameLocationDialog(context, ref, loc['id'] as int, loc['name'] as String);
                       },
+                      onClear: () => setState(() {
+                        _selectedLocationId = null;
+                        _selectedLocationName = null;
+                      }),
                     ),
                     loading: () => const LinearProgressIndicator(),
                     error: (e, _) => Text('Error loading: $e'),

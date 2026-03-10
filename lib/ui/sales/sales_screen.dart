@@ -542,31 +542,36 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                       if (_selectedParty != null && controller.text.isEmpty) {
                         controller.text = _selectedParty!.partyName;
                       }
-                      return TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        decoration: InputDecoration(
-                          hintText: 'Select Party Name...',
-                          isDense: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade100)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade100)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
-                          filled: true,
-                          fillColor: Colors.white,
-                          prefixIcon: const Icon(Icons.person_pin_rounded, color: AppColors.primary, size: 22),
-                          suffixIcon: (controller.text.isNotEmpty) 
-                            ? IconButton(
-                                icon: const Icon(Icons.cancel_rounded, size: 20, color: Colors.grey), 
-                                onPressed: () {
-                                  controller.clear();
-                                  _partySearchController.clear();
-                                  setState(() => _selectedParty = null);
-                                }
-                              )
-                            : Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey.shade400),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        ),
-                        onFieldSubmitted: (_) => onFieldSubmitted(),
+                      return ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: controller,
+                        builder: (context, value, child) {
+                          return TextFormField(
+                            controller: controller,
+                            focusNode: focusNode,
+                            decoration: InputDecoration(
+                              hintText: 'Select Party Name...',
+                              isDense: true,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade100)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade100)),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                              filled: true,
+                              fillColor: Colors.white,
+                              prefixIcon: const Icon(Icons.person_pin_rounded, color: AppColors.primary, size: 22),
+                              suffixIcon: (value.text.isNotEmpty) 
+                                ? IconButton(
+                                    icon: const Icon(Icons.cancel_rounded, size: 20, color: Colors.grey), 
+                                    onPressed: () {
+                                      controller.clear();
+                                      _partySearchController.clear();
+                                      setState(() => _selectedParty = null);
+                                    }
+                                  )
+                                : Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey.shade400),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            ),
+                            onFieldSubmitted: (_) => onFieldSubmitted(),
+                          );
+                        },
                       );
                     },
                     optionsViewBuilder: (context, onSelected, options) {
@@ -1277,47 +1282,52 @@ class _SaleItemRowState extends State<_SaleItemRow> {
         );
       },
       fieldViewBuilder: (context, ctrl, focusNode, onSub) {
-        return TextFormField(
-          controller: ctrl,
-          focusNode: focusNode,
-          style: isMobile ? const TextStyle(fontSize: 14, fontWeight: FontWeight.w500) : null,
-          decoration: InputDecoration(
-            labelText: isMobile ? null : (isMobile ? 'Search Designs' : 'Search Design Numbers'),
-            hintText: isMobile ? 'Select Design / Location...' : 'Type to filter...',
-            isDense: true,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
-            filled: true,
-            fillColor: Colors.white,
-            prefixIcon: isMobile 
-              ? Container(
-                  width: 36,
-                  margin: const EdgeInsets.only(right: 8),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
-                  ),
-                  child: Text('${widget.index + 1}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary, fontSize: 13)),
-                )
-              : Container(
-                  margin: const EdgeInsets.only(right: 8, left: 4),
-                  child: Icon(Icons.search_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.7)),
-                ),
-            prefixIconConstraints: isMobile ? const BoxConstraints(minWidth: 40, minHeight: 45) : const BoxConstraints(minWidth: 40, minHeight: 40),
-            suffixIcon: widget.line.stockRow != null
-                ? IconButton(
-                    icon: Icon(Icons.cancel_rounded, size: 18, color: Colors.grey.shade400),
-                    onPressed: () { 
-                      ctrl.clear(); 
-                      widget.onSelected({}); 
-                      setState(() { widget.line.stockRow = null; });
-                    },
-                  )
-                : null,
-            contentPadding: EdgeInsets.only(left: isMobile ? 0 : 16, right: 16, top: 14, bottom: 14),
-          ),
+        return ValueListenableBuilder<TextEditingValue>(
+          valueListenable: ctrl,
+          builder: (context, value, child) {
+            return TextFormField(
+              controller: ctrl,
+              focusNode: focusNode,
+              style: isMobile ? const TextStyle(fontSize: 14, fontWeight: FontWeight.w500) : null,
+              decoration: InputDecoration(
+                labelText: isMobile ? null : (isMobile ? 'Search Designs' : 'Search Design Numbers'),
+                hintText: isMobile ? 'Select Design / Location...' : 'Type to filter...',
+                isDense: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                filled: true,
+                fillColor: Colors.white,
+                prefixIcon: isMobile 
+                  ? Container(
+                      width: 36,
+                      margin: const EdgeInsets.only(right: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
+                      ),
+                      child: Text('${widget.index + 1}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary, fontSize: 13)),
+                    )
+                  : Container(
+                      margin: const EdgeInsets.only(right: 8, left: 4),
+                      child: Icon(Icons.search_rounded, size: 20, color: AppColors.primary.withValues(alpha: 0.7)),
+                    ),
+                prefixIconConstraints: isMobile ? const BoxConstraints(minWidth: 40, minHeight: 45) : const BoxConstraints(minWidth: 40, minHeight: 40),
+                suffixIcon: value.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.cancel_rounded, size: 18, color: Colors.grey.shade400),
+                        onPressed: () { 
+                          ctrl.clear(); 
+                          widget.onSelected({}); 
+                          setState(() { widget.line.stockRow = null; });
+                        },
+                      )
+                    : null,
+                contentPadding: EdgeInsets.only(left: isMobile ? 0 : 16, right: 16, top: 14, bottom: 14),
+              ),
+            );
+          },
         );
       },
     );

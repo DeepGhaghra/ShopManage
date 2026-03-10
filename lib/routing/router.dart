@@ -30,14 +30,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (session != null && isLoggingIn) {
-        // We'll let the role-based redirect handle this below by returning '/' or '/admin'
-        final email = session.user.email ?? '';
-        return email.toLowerCase().contains('admin') ? '/admin' : '/';
+        // Use the provider for role check
+        final isAdmin = ref.read(isAdminProvider);
+        return isAdmin ? '/admin' : '/';
       }
 
       // Role-based protection
       if (session != null) {
-        final isAdmin = session.user.email?.toLowerCase().contains('admin') ?? false;
+        final isAdmin = ref.read(isAdminProvider);
         final isPathAdmin = state.uri.toString().startsWith('/admin');
 
         if (isAdmin && !isPathAdmin && state.uri.toString() == '/') {

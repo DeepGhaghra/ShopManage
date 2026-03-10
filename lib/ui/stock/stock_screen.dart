@@ -569,6 +569,14 @@ class _AddStockDialogState extends ConsumerState<_AddStockDialog> {
                       )
                     : const Icon(Icons.arrow_drop_down_rounded, color: Colors.grey),
               ),
+              onTap: () {
+                if (controller.text.isNotEmpty) {
+                  controller.selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: controller.text.length,
+                  );
+                }
+              },
               onFieldSubmitted: (String value) => onFieldSubmitted(),
             );
           },

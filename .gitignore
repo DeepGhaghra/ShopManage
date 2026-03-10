@@ -12,6 +12,14 @@
 .env.local
 .env*.local
 
+# Temporary Analysis & Debug Files
+analysis_output.txt
+debug_*.txt
+*.tmp
+/tmp/
+.agent_logs/
+analysis_output_*.txt
+
 
 
 # Flutter repo-specific

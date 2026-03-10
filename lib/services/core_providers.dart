@@ -6,16 +6,37 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
 
-// A stream that emits the currently authenticated user
-final authUserProvider = StreamProvider<User?>((ref) {
-  return ref.watch(supabaseClientProvider).auth.onAuthStateChange.map((event) => event.session?.user);
+// A stream that emits the currently authenticated user session
+final authStateProvider = StreamProvider<AuthState>((ref) {
+  return ref.watch(supabaseClientProvider).auth.onAuthStateChange;
 });
 
-// Checks if the current user is the admin
+final authUserProvider = Provider<User?>((ref) {
+  return ref.watch(authStateProvider).value?.session?.user;
+});
+
+// Fetches the user profile from the database
+final userProfileProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  final user = ref.watch(authUserProvider);
+  if (user == null) return null;
+  
+  final response = await ref.watch(supabaseClientProvider)
+      .from('users')
+      .select()
+      .eq('id', user.id)
+      .maybeSingle();
+  return response;
+});
+
+// Checks if the current user is an admin based on database role
 final isAdminProvider = Provider<bool>((ref) {
-  final user = ref.watch(authUserProvider).value;
-  if (user == null || user.email == null) return false;
-  return user.email!.toLowerCase().contains('admin');
+  final profile = ref.watch(userProfileProvider).value;
+  if (profile == null) {
+    // Fallback to email during initial load or if profile fetch fails
+    final user = ref.watch(authUserProvider);
+    return user?.email?.toLowerCase().contains('admin') ?? false;
+  }
+  return profile['role']?.toString().toLowerCase() == 'admin';
 });
 
 class ActiveShopNotifier extends Notifier<Shop?> {
@@ -65,36 +86,28 @@ final shopsProvider = FutureProvider<List<Shop>>((ref) async {
   return ref.watch(shopRepositoryProvider).getShops();
 });
 
-// Provides shops associated with the current admin/user
+// Provides shops associated with the current admin/user via user_shop_access table
 final associatedShopsProvider = FutureProvider<List<Shop>>((ref) async {
+  final user = ref.watch(authUserProvider);
+  if (user == null) return [];
+
+  final isAdmin = ref.watch(isAdminProvider);
   final allShops = await ref.watch(shopsProvider.future);
-  final user = ref.watch(authUserProvider).value;
-  
-  if (user == null || user.email == null) return [];
-  
-  final email = user.email!.toLowerCase();
-  
-  // Super admins or any 'admin' typed email can see all shops
-  if (email.contains('admin')) {
+
+  // Admins see all shops
+  if (isAdmin) {
     return allShops;
   }
+
+  // Regular users see only assigned shops from user_shop_access
+  final response = await ref.watch(supabaseClientProvider)
+      .from('user_shop_access')
+      .select('shop_id')
+      .eq('user_id', user.id);
   
-  // Filter by domain or keyword for shop-specific users
-  // e.g. shiv@shivlaminates.com or somnath@gmail.com
-  final parts = email.split('@');
-  if (parts.length < 2) return [];
-  final local = parts[0];
-  final domain = parts[1].split('.')[0];
+  final List<int> assignedIds = (response as List).map((row) => row['shop_id'] as int).toList();
   
-  return allShops.where((shop) {
-    final name = shop.shopName.toLowerCase();
-    final sName = (shop.shopShortName ?? '').toLowerCase();
-    
-    // Match local part (somnath@...) or domain (admin@shiv.com)
-    return name.contains(local) || sName.contains(local) || 
-           (domain != 'gmail' && domain != 'outlook' && domain != 'yahoo' && 
-            (name.contains(domain) || sName.contains(domain)));
-  }).toList();
+  return allShops.where((shop) => assignedIds.contains(shop.id)).toList();
 });
 
 // Admin providers

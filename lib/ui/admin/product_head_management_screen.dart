@@ -93,7 +93,7 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                               Expanded(
                                 child: Text(
                                   head['product_name'], 
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary, letterSpacing: -0.2)
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textPrimary, letterSpacing: -0.2)
                                 ),
                               ),
                             ],
@@ -113,7 +113,7 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                             children: [
                               Text(
                                 '₹${head['product_rate']}', 
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.textPrimary)
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.textPrimary)
                               ),
                               _buildEditButton(context, ref, foldersAsync, shopsAsync, head),
                             ],
@@ -131,7 +131,7 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                               children: [
                                 Text(
                                   head['product_name'], 
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary, letterSpacing: -0.2)
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textPrimary, letterSpacing: -0.2)
                                 ),
                                 const SizedBox(height: 6),
                                 Wrap(
@@ -152,7 +152,7 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                             children: [
                               Text(
                                 '₹${head['product_rate']}', 
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: AppColors.textPrimary, letterSpacing: -0.5)
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.textPrimary, letterSpacing: -0.5)
                               ),
                               const SizedBox(height: 4),
                               _buildEditButton(context, ref, foldersAsync, shopsAsync, head),

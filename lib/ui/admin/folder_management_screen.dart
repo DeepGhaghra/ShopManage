@@ -98,7 +98,7 @@ class _FolderManagementScreenState extends ConsumerState<FolderManagementScreen>
                       folder['folder_name'], 
                       style: TextStyle(
                         fontWeight: FontWeight.w800, 
-                        fontSize: 17, 
+                        fontSize: 14, 
                         color: isActive ? AppColors.textPrimary : AppColors.textSecondary.withOpacity(0.5),
                         decoration: isActive ? null : TextDecoration.lineThrough,
                         decorationColor: AppColors.textSecondary.withOpacity(0.5),

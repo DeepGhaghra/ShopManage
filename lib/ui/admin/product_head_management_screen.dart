@@ -72,18 +72,18 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                   side: BorderSide(color: AppColors.divider, width: 1),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: AppColors.cardPrice.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.layers_rounded, color: AppColors.cardPrice, size: 24),
+                        child: const Icon(Icons.layers_rounded, color: AppColors.cardPrice, size: 20),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,12 +91,12 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                           children: [
                             Text(
                               head['product_name'], 
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary, letterSpacing: -0.2)
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.textPrimary, letterSpacing: -0.2)
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
+                              spacing: 6,
+                              runSpacing: 6,
                               children: [
                                 _buildTag(shopName, AppColors.cardSales),
                                 _buildTag(folderName, AppColors.cardStock),
@@ -105,14 +105,14 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             '₹${head['product_rate']}', 
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.textPrimary, letterSpacing: -0.5)
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: AppColors.textPrimary, letterSpacing: -0.5)
                           ),
                           const SizedBox(height: 4),
                           Material(

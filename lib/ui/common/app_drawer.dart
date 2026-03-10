@@ -105,9 +105,8 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   const Divider(indent: 16, endIndent: 16, height: 24),
                 ],
-                // Only show user pages if NOT in admin mode OR if strictly requested
-                // But the user asked to REMOVE them from admin mode
-                if (!currentRoute.startsWith('/admin')) ...[
+                // Only show user pages if NOT in admin mode AND user is NOT an admin
+                if (!isAdmin && !currentRoute.startsWith('/admin')) ...[
                   _drawerItem(
                     context,
                     icon: Icons.dashboard_outlined,

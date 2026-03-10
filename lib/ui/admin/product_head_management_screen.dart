@@ -15,30 +15,38 @@ class ProductHeadManagementScreen extends ConsumerStatefulWidget {
 }
 
 class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagementScreen> {
-  int? _selectedShopId;
-
   @override
   Widget build(BuildContext context) {
     final headsAsync = ref.watch(allProductHeadsProvider);
     final foldersAsync = ref.watch(allFoldersProvider);
     final shopsAsync = ref.watch(shopsProvider);
+    final activeShop = ref.watch(activeShopProvider);
 
     return AdminScaffold(
-      title: _selectedShopId == null ? 'All Products' : 'Shop Products',
-      selectedShopId: _selectedShopId,
-      onShopChanged: (val) => setState(() => _selectedShopId = val),
+      title: activeShop == null ? 'All Products' : 'Shop Products',
+      selectedShopId: activeShop?.id,
+      onShopChanged: (val) {
+        if (val == null) {
+          ref.read(activeShopProvider.notifier).setShop(null);
+        } else {
+          shopsAsync.whenData((shops) {
+            final shop = shops.firstWhere((s) => s.id == val);
+            ref.read(activeShopProvider.notifier).setShop(shop);
+          });
+        }
+      },
       actions: [
         IconButton(
           icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
-          onPressed: () => _showProductHeadDialog(context, ref, foldersAsync, shopsAsync, initialShopId: _selectedShopId),
+          onPressed: () => _showProductHeadDialog(context, ref, foldersAsync, shopsAsync, initialShopId: activeShop?.id),
           tooltip: 'Add Product',
         ),
       ],
       body: headsAsync.when(
         data: (heads) {
-          final filtered = _selectedShopId == null 
+          final filtered = activeShop == null 
               ? heads 
-              : heads.where((h) => h['shop_id'] == _selectedShopId).toList();
+              : heads.where((h) => h['shop_id'] == activeShop.id).toList();
 
           if (filtered.isEmpty) {
             return Center(
@@ -48,7 +56,7 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                   Icon(Icons.inventory_2_outlined, size: 64, color: AppColors.textSecondary.withOpacity(0.2)),
                   const SizedBox(height: 16),
                   Text(
-                    _selectedShopId == null ? 'No products found.' : 'No products for this shop.',
+                    activeShop == null ? 'No products found.' : 'No products for this shop.',
                     style: TextStyle(color: AppColors.textSecondary.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],

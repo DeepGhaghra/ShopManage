@@ -15,35 +15,37 @@ class FolderManagementScreen extends ConsumerStatefulWidget {
 }
 
 class _FolderManagementScreenState extends ConsumerState<FolderManagementScreen> {
-  int? _selectedShopId;
-
   @override
   Widget build(BuildContext context) {
     final foldersAsync = ref.watch(allFoldersProvider);
     final shopsAsync = ref.watch(shopsProvider);
     final activeShop = ref.watch(activeShopProvider);
 
-    // Sync with global active shop if not locally selected
-    if (_selectedShopId == null && activeShop != null) {
-      _selectedShopId = activeShop.id;
-    }
-
     return AdminScaffold(
-      title: _selectedShopId == null ? 'All Folders' : 'Shop Folders',
-      selectedShopId: _selectedShopId,
-      onShopChanged: (val) => setState(() => _selectedShopId = val),
+      title: activeShop == null ? 'All Folders' : 'Shop Folders',
+      selectedShopId: activeShop?.id,
+      onShopChanged: (val) {
+        if (val == null) {
+          ref.read(activeShopProvider.notifier).setShop(null);
+        } else {
+          shopsAsync.whenData((shops) {
+            final shop = shops.firstWhere((s) => s.id == val);
+            ref.read(activeShopProvider.notifier).setShop(shop);
+          });
+        }
+      },
       actions: [
         IconButton(
           icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
-          onPressed: () => _showFolderDialog(context, ref, shopsAsync, initialShopId: _selectedShopId),
+          onPressed: () => _showFolderDialog(context, ref, shopsAsync, initialShopId: activeShop?.id),
           tooltip: 'Add Folder',
         ),
       ],
       body: foldersAsync.when(
         data: (folders) {
-          final filtered = _selectedShopId == null 
+          final filtered = activeShop == null 
               ? folders 
-              : folders.where((f) => f['shop_id'] == _selectedShopId).toList();
+              : folders.where((f) => f['shop_id'] == activeShop.id).toList();
 
           if (filtered.isEmpty) {
             return Center(
@@ -53,7 +55,7 @@ class _FolderManagementScreenState extends ConsumerState<FolderManagementScreen>
                   Icon(Icons.folder_open_outlined, size: 64, color: AppColors.textSecondary.withOpacity(0.2)),
                   const SizedBox(height: 16),
                   Text(
-                    _selectedShopId == null ? 'No folders found.' : 'No folders for this shop.',
+                    activeShop == null ? 'No folders found.' : 'No folders for this shop.',
                     style: TextStyle(color: AppColors.textSecondary.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],

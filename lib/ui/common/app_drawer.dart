@@ -103,6 +103,13 @@ class AppDrawer extends ConsumerWidget {
                     route: '/admin/locations',
                     isSelected: currentRoute == '/admin/locations',
                   ),
+                  _drawerItem(
+                    context,
+                    icon: Icons.storefront_outlined,
+                    label: 'Manage Shops',
+                    route: '/admin/shops',
+                    isSelected: currentRoute == '/admin/shops',
+                  ),
                   const Divider(indent: 16, endIndent: 16, height: 24),
                 ],
                 // Only show user pages if NOT in admin mode AND user is NOT an admin

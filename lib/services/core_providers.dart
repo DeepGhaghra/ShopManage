@@ -15,7 +15,7 @@ final authUserProvider = StreamProvider<User?>((ref) {
 final isAdminProvider = Provider<bool>((ref) {
   final user = ref.watch(authUserProvider).value;
   if (user == null || user.email == null) return false;
-  return user.email!.startsWith('admin@');
+  return user.email!.toLowerCase().contains('admin');
 });
 
 class ActiveShopNotifier extends Notifier<Shop?> {

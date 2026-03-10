@@ -14,29 +14,37 @@ class LocationManagementScreen extends ConsumerStatefulWidget {
 }
 
 class _LocationManagementScreenState extends ConsumerState<LocationManagementScreen> {
-  int? _selectedShopId;
-
   @override
   Widget build(BuildContext context) {
     final locationsAsync = ref.watch(allLocationsProvider);
     final shopsAsync = ref.watch(shopsProvider);
+    final activeShop = ref.watch(activeShopProvider);
 
     return AdminScaffold(
-      title: _selectedShopId == null ? 'All Locations' : 'Shop Locations',
-      selectedShopId: _selectedShopId,
-      onShopChanged: (val) => setState(() => _selectedShopId = val),
+      title: activeShop == null ? 'All Locations' : 'Shop Locations',
+      selectedShopId: activeShop?.id,
+      onShopChanged: (val) {
+        if (val == null) {
+          ref.read(activeShopProvider.notifier).setShop(null);
+        } else {
+          shopsAsync.whenData((shops) {
+            final shop = shops.firstWhere((s) => s.id == val);
+            ref.read(activeShopProvider.notifier).setShop(shop);
+          });
+        }
+      },
       actions: [
         IconButton(
           icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
-          onPressed: () => _showLocationDialog(context, ref, shopsAsync, initialShopId: _selectedShopId),
+          onPressed: () => _showLocationDialog(context, ref, shopsAsync, initialShopId: activeShop?.id),
           tooltip: 'Add Location',
         ),
       ],
       body: locationsAsync.when(
         data: (locations) {
-          final filtered = _selectedShopId == null 
+          final filtered = activeShop == null 
               ? locations 
-              : locations.where((l) => l['shop_id'] == _selectedShopId).toList();
+              : locations.where((l) => l['shop_id'] == activeShop.id).toList();
 
           if (filtered.isEmpty) {
             return Center(
@@ -46,7 +54,7 @@ class _LocationManagementScreenState extends ConsumerState<LocationManagementScr
                   Icon(Icons.location_off_outlined, size: 64, color: AppColors.textSecondary.withOpacity(0.2)),
                   const SizedBox(height: 16),
                   Text(
-                    _selectedShopId == null ? 'No locations found.' : 'No locations for this shop.',
+                    activeShop == null ? 'No locations found.' : 'No locations for this shop.',
                     style: TextStyle(color: AppColors.textSecondary.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],

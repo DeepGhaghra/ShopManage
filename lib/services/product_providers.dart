@@ -130,6 +130,38 @@ class ProductRepository {
       rethrow;
     }
   }
+
+  Future<void> batchBulkUpdateProducts({
+    required List<Map<String, int>> adjustments,
+    required int shopId,
+    required bool applyToParties,
+  }) async {
+    try {
+      await _client.rpc('batch_bulk_update_products', params: {
+        'p_adjustments': adjustments,
+        'p_shop_id': shopId,
+        'p_apply_to_parties': applyToParties,
+      });
+      _log.success('Admin', 'Batch bulk update completed for ${adjustments.length} products');
+    } catch (e) {
+      _log.error('Admin', 'Batch bulk update failed', e);
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getProductRateHistory(int productId, int shopId) async {
+    try {
+      return await _client
+          .from('product_rate_history')
+          .select()
+          .eq('product_id', productId)
+          .eq('shop_id', shopId)
+          .order('created_at', ascending: false);
+    } catch (e) {
+      _log.error('Admin', 'Error fetching product rate history', e);
+      return [];
+    }
+  }
 }
 
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
@@ -160,4 +192,11 @@ final allFoldersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
 
 final allProductHeadsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   return ref.watch(productRepositoryProvider).getAllProductHeads();
+});
+
+// Provides the rate history for a specific product head
+final productRateHistoryProvider = FutureProvider.family<List<Map<String, dynamic>>, int>((ref, productId) async {
+  final activeShop = ref.watch(activeShopProvider);
+  if (activeShop == null) return [];
+  return ref.watch(productRepositoryProvider).getProductRateHistory(productId, activeShop.id);
 });

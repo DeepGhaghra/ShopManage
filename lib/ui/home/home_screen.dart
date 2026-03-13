@@ -35,6 +35,18 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeShop = ref.watch(activeShopProvider);
+    final isAdmin = ref.watch(isAdminProvider);
+
+    // FIX: If the router erroneously sent an Admin here before the profile loaded,
+    // redirect them to the Admin Console now that we know they are an Admin.
+    if (isAdmin) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted && GoRouterState.of(context).uri.toString() == '/') {
+          context.go('/admin');
+        }
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     // If no shop is selected, show the Shop Selection screen overlay or embedded
     if (activeShop == null) {

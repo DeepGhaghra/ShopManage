@@ -15,6 +15,7 @@ import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/loading_overlay.dart';
 import '../common/app_drawer.dart';
+import '../common/app_bar_actions.dart';
 import '../common/confirmation_dialog.dart';
 import '../../utils/error_translator.dart';
 
@@ -340,7 +341,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
             children: [
               const BackButton(color: AppColors.textPrimary),
               IconButton(
-                icon: const Icon(Icons.menu, color: AppColors.primary),
+                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
                 tooltip: 'Menu',
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
@@ -363,6 +364,9 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
             ],
           );
         }),
+        actions: const [
+          AppBarActions(),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.primary,

@@ -9,6 +9,7 @@ import '../../utils/error_translator.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
 import '../common/app_drawer.dart';
+import '../common/app_bar_actions.dart';
 
 class PartiesScreen extends ConsumerStatefulWidget {
   const PartiesScreen({super.key});
@@ -42,7 +43,7 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
             children: [
               const BackButton(color: AppColors.textPrimary),
               IconButton(
-                icon: const Icon(Icons.menu, color: AppColors.primary),
+                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
                 tooltip: 'Menu',
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
@@ -82,6 +83,7 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
               });
             },
           ),
+          const AppBarActions(),
         ],
       ),
       drawer: const AppDrawer(currentRoute: '/parties'),

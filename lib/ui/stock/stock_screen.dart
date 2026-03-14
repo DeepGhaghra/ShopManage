@@ -10,6 +10,7 @@ import '../../utils/error_translator.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
 import '../common/app_drawer.dart';
+import '../common/app_bar_actions.dart';
 import 'design_history_sheet.dart';
 
 class StockScreen extends ConsumerStatefulWidget {
@@ -56,7 +57,19 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
-        leading: const BackButton(color: AppColors.textPrimary),
+        leadingWidth: 96,
+        leading: Builder(builder: (context) {
+          return Row(
+            children: [
+              const BackButton(color: AppColors.textPrimary),
+              IconButton(
+                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
+                tooltip: 'Menu',
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ],
+          );
+        }),
         title: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -91,7 +104,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
             icon: const Icon(Icons.compare_arrows_rounded, color: AppColors.primary),
             onPressed: () => _showTransferStockDialog(context, ref),
           ),
-          const SizedBox(width: 8),
+          const AppBarActions(),
         ],
       ),
       drawer: const AppDrawer(currentRoute: '/stock'),

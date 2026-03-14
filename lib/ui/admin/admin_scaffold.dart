@@ -4,6 +4,9 @@ import 'package:shopmanage/theme/app_theme.dart';
 import '../../services/core_providers.dart';
 import '../../models/shop.dart';
 import '../common/searchable_selector.dart';
+import '../common/confirmation_dialog.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class AdminScaffold extends ConsumerWidget {
   final String title;
@@ -112,6 +115,17 @@ class AdminScaffold extends ConsumerWidget {
               error: (_, __) => const SizedBox(),
             ),
           if (actions != null) ...actions!,
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.white70),
+            tooltip: 'Sign Out',
+            onPressed: () async {
+              final confirmed = await ConfirmationDialog.showSignOut(context);
+              if (confirmed == true) {
+                await Supabase.instance.client.auth.signOut();
+                if (context.mounted) context.go('/login');
+              }
+            },
+          ),
           const SizedBox(width: 8),
         ],
       ),

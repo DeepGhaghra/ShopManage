@@ -10,6 +10,7 @@ import '../../models/product_head.dart';
 import '../../models/pricelist.dart';
 import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
+import '../common/app_bar_actions.dart';
 import '../../utils/error_translator.dart';
 
 class PricelistScreen extends ConsumerStatefulWidget {
@@ -156,7 +157,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
             children: [
               const BackButton(color: AppColors.textPrimary),
               IconButton(
-                icon: const Icon(Icons.menu, color: AppColors.primary),
+                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
                 tooltip: 'Menu',
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
@@ -193,6 +194,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                 child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
               ),
             ),
+          const AppBarActions(),
         ],
       ),
       drawer: const AppDrawer(currentRoute: '/pricelist'),

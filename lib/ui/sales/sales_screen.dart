@@ -11,6 +11,7 @@ import '../../services/core_providers.dart';
 import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
+import '../common/app_bar_actions.dart';
 import '../common/confirmation_dialog.dart';
 import '../common/loading_overlay.dart';
 import '../common/error_view.dart';
@@ -950,7 +951,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             children: [
               const BackButton(color: AppColors.textPrimary),
               IconButton(
-                icon: const Icon(Icons.menu_rounded, color: AppColors.textPrimary),
+                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
                 tooltip: 'Menu',
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
@@ -978,6 +979,9 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
           );
         }),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        actions: const [
+          AppBarActions(),
+        ],
       ),
       drawer: const AppDrawer(currentRoute: '/sales'),
       body: Stack(

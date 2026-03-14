@@ -6,6 +6,7 @@ import '../../services/export_service.dart';
 import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
+import '../common/app_bar_actions.dart';
 
 enum DateFilter {
   today('Today', Icons.today_rounded),
@@ -441,6 +442,19 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // A very modern, slightly cool off-white
       appBar: AppBar(
+        leadingWidth: 96,
+        leading: Builder(builder: (context) {
+          return Row(
+            children: [
+              const BackButton(color: AppColors.textPrimary),
+              IconButton(
+                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
+                tooltip: 'Menu',
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ],
+          );
+        }),
         centerTitle: true,
         title: Column(
           mainAxisSize: MainAxisSize.min,
@@ -456,6 +470,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
+        actions: const [AppBarActions()],
       ),
       drawer: const AppDrawer(currentRoute: '/export'),
       body: Stack(

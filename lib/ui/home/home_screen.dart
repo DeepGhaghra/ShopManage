@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../common/error_view.dart';
 import '../common/confirmation_dialog.dart';
 import '../common/app_drawer.dart';
+import '../common/app_bar_actions.dart';
 import '../../utils/error_translator.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -120,28 +121,8 @@ class HomeScreen extends ConsumerWidget {
             ],
           );
         }),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.store, color: AppColors.primary),
-            onPressed: () {
-              ref.read(activeShopProvider.notifier).setShop(null); // Clear shop to re-select
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('🔄 Switched to shop selection'),
-                  backgroundColor: AppColors.primaryDim,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
-            tooltip: 'Switch Shop',
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
-            onPressed: () => _signOut(context),
-            tooltip: 'Sign Out',
-          ),
+        actions: const [
+          AppBarActions(),
         ],
       ),
       drawer: const AppDrawer(currentRoute: '/'),

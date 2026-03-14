@@ -1,4 +1,4 @@
-import 'package:intl/intl.dart';
+import '../utils/date_utils.dart';
 
 enum LogLevel { info, success, warning, error }
 
@@ -19,7 +19,7 @@ class LogEntry {
     this.id,
     this.userEmail,
     DateTime? timestamp,
-  }) : timestamp = timestamp ?? DateTime.now();
+  }) : timestamp = timestamp ?? DateTime.now().toIST();
 
   Map<String, dynamic> toJson() => {
     'timestamp': timestamp.toIso8601String(),
@@ -42,7 +42,7 @@ class LogEntry {
       details: json['details']?.toString(),
       id: json['id'] as int?,
       userEmail: json['user_email'] as String?,
-      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp']) : null,
+      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp'] as String).toIST() : null,
     );
   }
 
@@ -58,9 +58,9 @@ class LogEntry {
     );
   }
 
-  String get formattedTime => DateFormat('HH:mm:ss').format(timestamp);
-  String get formattedDate => DateFormat('dd MMM yyyy').format(timestamp);
-  String get fullFormatted => DateFormat('dd MMM yyyy • HH:mm:ss').format(timestamp);
+  String get formattedTime => timestamp.formatIST('HH:mm:ss');
+  String get formattedDate => timestamp.formatDateIST();
+  String get fullFormatted => timestamp.formatIST('dd MMM yyyy • HH:mm:ss');
 
   @override
   String toString() => '[$fullFormatted] [${level.name.toUpperCase()}] [$module] $message${details != null ? '\n  → $details' : ''}';

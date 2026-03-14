@@ -4,6 +4,7 @@ import '../../services/stock_history_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/error_translator.dart';
 import 'package:intl/intl.dart';
+import '../../utils/date_utils.dart';
 
 class DesignHistorySheet extends ConsumerStatefulWidget {
   final int designId;
@@ -119,7 +120,7 @@ class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
                       final query = _searchQuery.trim().toLowerCase();
                       if (query.isEmpty) return true;
                       
-                      final dateStr = DateFormat('dd MMM yy').format(item.date).toLowerCase();
+                      final dateStr = item.date.formatIST('dd MMM yy').toLowerCase();
                       final idStr = (item.identifier ?? '').toLowerCase();
                       final locStr = item.locationName.toLowerCase();
                       final partyStr = item.partyName.toLowerCase();
@@ -278,7 +279,7 @@ class _DesignHistorySheetState extends ConsumerState<DesignHistorySheet> {
                                           ],
                                           Text('•', style: TextStyle(fontSize: 11, color: Colors.grey.shade400, fontWeight: FontWeight.w500)),
                                           Text(
-                                            DateFormat('dd MMM yy • hh:mm a').format(item.date),
+                                            item.date.formatIST('dd MMM yy • hh:mm a'),
                                             style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                                           ),
                                         ],

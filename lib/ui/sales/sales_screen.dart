@@ -18,6 +18,7 @@ import '../common/loading_overlay.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
 import '../../utils/error_translator.dart';
+import '../../utils/date_utils.dart';
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 class _SaleItemLine {
@@ -115,7 +116,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
   bool _isSaving = false;
   bool _isInitializing = false;
   int _formResetKey = 0;
-  DateTime _invoiceDate = DateTime.now();
+  DateTime _invoiceDate = DateTime.now().toIST();
 
   @override
   void initState() {
@@ -194,7 +195,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     setState(() {
       _editingInvoiceNo = invoiceNo;
       _invoiceController.text = invoiceNo;
-      _invoiceDate = entries.isNotEmpty ? entries.first.date : DateTime.now();
+      _invoiceDate = entries.isNotEmpty ? entries.first.date : DateTime.now().toIST();
       _formResetKey++; // Force all Autocomplete widgets to refresh their initialValue
       
       // Try to re-hydrate party
@@ -385,8 +386,8 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
           quantity: line.quantity,
           rate: line.currentRate,
           amount: line.total,
-          createdAt: DateTime.now(),
-          modifiedAt: DateTime.now(),
+          createdAt: DateTime.now().toIST(),
+          modifiedAt: DateTime.now().toIST(),
           shopId: activeShop.id,
         );
       }).toList();
@@ -453,7 +454,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
 
         setState(() {
           _editingInvoiceNo = null;
-          _invoiceDate = DateTime.now();
+          _invoiceDate = DateTime.now().toIST();
           _selectedParty = null;
           _partySearchController.clear(); // Fixed: Clear the search field
           _lines.clear();
@@ -1235,7 +1236,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                                         Party(
                                                           id: firstEntry.partyId, 
                                                           partyName: firstEntry.partyName ?? 'Unknown',
-                                                          timeAdded: DateTime.now(),
+                                                          timeAdded: DateTime.now().toIST(),
                                                           shopId: firstEntry.shopId,
                                                         );
         

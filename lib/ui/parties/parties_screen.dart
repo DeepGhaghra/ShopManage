@@ -11,6 +11,7 @@ import '../common/empty_state_view.dart';
 import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
 import '../common/app_bar_title.dart';
+import '../../utils/date_utils.dart';
 
 class PartiesScreen extends ConsumerStatefulWidget {
   const PartiesScreen({super.key});
@@ -368,7 +369,7 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                                 partyName: nameController.text.trim(),
                                 city: cityController.text.trim().isEmpty ? null : cityController.text.trim(),
                                 mobile: mobileController.text.trim().isEmpty ? null : mobileController.text.trim(),
-                                timeAdded: DateTime.now(),
+                                timeAdded: DateTime.now().toIST(),
                                 shopId: activeShop.id,
                               ));
                               log.success('Parties', 'New party "${nameController.text.trim()}" added');

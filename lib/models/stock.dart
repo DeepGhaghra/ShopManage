@@ -1,3 +1,5 @@
+import '../utils/date_utils.dart';
+
 class Stock {
   final int id;
   final int designId;
@@ -23,8 +25,8 @@ class Stock {
       designId: json['design_id'] as int,
       locationId: json['location_id'] as int,
       quantity: json['quantity'] as int,
-      timeAdded: DateTime.parse(json['time_added'] as String),
-      modifiedAt: json['modified_at'] != null ? DateTime.parse(json['modified_at'] as String) : null,
+      timeAdded: DateTime.parse(json['time_added'] as String).toIST(),
+      modifiedAt: json['modified_at'] != null ? DateTime.parse(json['modified_at'] as String).toIST() : null,
       shopId: json['shop_id'] as int,
     );
   }

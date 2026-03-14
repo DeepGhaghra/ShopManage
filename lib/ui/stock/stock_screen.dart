@@ -100,7 +100,10 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(shopStockProvider),
             color: AppColors.primary,
-            child: CustomScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1100),
+                child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               slivers: [
@@ -326,8 +329,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   ),
               ],
             ),
-          );
-        },
+          ),
+        );
+      },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => ErrorView(
           error: err,

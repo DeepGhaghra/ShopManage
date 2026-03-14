@@ -14,11 +14,13 @@ import '../../services/core_providers.dart';
 import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/loading_overlay.dart';
+import '../../utils/date_utils.dart';
 import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
 import '../common/app_bar_title.dart';
 import '../common/confirmation_dialog.dart';
 import '../../utils/error_translator.dart';
+import '../../utils/date_utils.dart';
 
 // ─── Local line model for Manual Entry tab ─────────────────────────────────────
 class _ManualLine {
@@ -62,7 +64,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
 
   late final TabController _tabController;
   Party?    _selectedParty;
-  DateTime  _selectedDate = DateTime.now();
+  DateTime  _selectedDate = DateTime.now().toIST();
   bool      _isSaving     = false;
   int       _formResetKey = 0;
 
@@ -92,7 +94,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: DateTime.now().toIST(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.light(primary: AppColors.primary)),
         child: child!,
@@ -285,7 +287,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       await ref.read(purchaseRepositoryProvider).saveBulkPurchase(
         shopId:  activeShop.id,
         partyId: _selectedParty!.id,
-        date:    DateFormat('yyyy-MM-dd').format(_selectedDate),
+        date:    _selectedDate.formatIST('yyyy-MM-dd'),
         lines:   lines,
       );
 
@@ -303,7 +305,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
         // Reset
         setState(() {
           _selectedParty = null;
-          _selectedDate  = DateTime.now();
+          _selectedDate  = DateTime.now().toIST();
           _manualLines.clear(); _manualLines.add(_ManualLine());
           _bulkRows = []; _uploadedFileName = null;
           _formResetKey++;
@@ -506,7 +508,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                     children: [
                       const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
                       const SizedBox(width: 6),
-                      Text(DateFormat('dd MMM yyyy').format(_selectedDate),
+                      Text(_selectedDate.formatDateIST(),
                           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
                     ],
                   ),

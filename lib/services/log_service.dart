@@ -10,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'log_repository.dart';
 import '../models/log_entry.dart';
 import 'core_providers.dart';
+import '../utils/date_utils.dart';
 
 export '../models/log_entry.dart';
 
@@ -60,7 +61,7 @@ class LogService {
         if (!await logDir.exists()) {
           await logDir.create(recursive: true);
         }
-        final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+        final today = DateTime.now().toIST().formatDateIST().replaceAll('/', '-'); // Use IST for file name
         _logFile = File(p.join(logDir.path, 'app_log_$today.txt'));
         
         // Load existing logs from today's file

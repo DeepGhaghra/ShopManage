@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core_providers.dart';
 import 'log_service.dart';
+import '../utils/date_utils.dart';
 
 // ─── Single purchase line (shared between manual + bulk) ──────────────────────
 class PurchaseLine {
@@ -62,7 +63,7 @@ class PurchaseRepository {
         final newQty = (stockRes['quantity'] as int) + quantity;
         await _client.from('stock').update({
           'quantity':    newQty,
-          'modified_at': DateTime.now().toIso8601String(),
+          'modified_at': DateTime.now().toIST().toIso8601String(),
         }).eq('id', stockRes['id']);
       } else {
         await _client.from('stock').insert({
@@ -70,7 +71,7 @@ class PurchaseRepository {
           'design_id':   designId,
           'location_id': locationId,
           'quantity':    quantity,
-          'modified_at': DateTime.now().toIso8601String(),
+          'modified_at': DateTime.now().toIST().toIso8601String(),
         });
       }
 

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core_providers.dart';
+import '../utils/date_utils.dart';
 
 final dashboardMetricsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final activeShop = ref.watch(activeShopProvider);
@@ -8,7 +9,7 @@ final dashboardMetricsProvider = FutureProvider<Map<String, dynamic>>((ref) asyn
   final client = ref.watch(supabaseClientProvider);
   
   // 1. Today's Total Sales Quantity
-  final todayStart = DateTime.now().copyWith(hour: 0, minute: 0, second: 0).toUtc().toIso8601String();
+  final todayStart = DateTime.now().startOfDayISTInUTCString();
   final salesResponse = await client
       .from('sales_entries')
       .select('quantity')
@@ -64,7 +65,7 @@ final dashboardDetailProvider = FutureProvider.family<List<Map<String, dynamic>>
 
   switch (type) {
     case 'today_sales':
-      final today = DateTime.now().copyWith(hour: 0, minute: 0, second: 0).toUtc().toIso8601String();
+      final today = DateTime.now().startOfDayISTInUTCString();
       final res = await client
           .from('sales_entries')
           .select('quantity, created_at, parties!inner(partyname), products_design!inner(design_no)')

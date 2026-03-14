@@ -4,6 +4,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/shop.dart';
 import '../models/party.dart';
+import '../utils/date_utils.dart';
 
 // ─── Data class for a single challan line ─────────────────────────────────────
 class ChallanLine {
@@ -43,7 +44,7 @@ class PrintService {
         const challanFormat = PdfPageFormat(10.5 * cm, 13.5 * cm, marginAll: 0.0);
         
         // Format date specifically as dd/MM/yyyy — use actual invoice date, fallback to today
-        final d = date ?? DateTime.now();
+        final d = date ?? DateTime.now().toIST();
         final String dateStr = '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
         // Font sizes - Optimized for 10.5cm width

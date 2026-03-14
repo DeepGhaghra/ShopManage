@@ -12,6 +12,7 @@ import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
 import '../common/app_bar_title.dart';
 import '../../utils/error_translator.dart';
+import '../../utils/date_utils.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -112,7 +113,10 @@ class HomeScreen extends ConsumerWidget {
         color: AppColors.primary,
         child: metricsAsync.when(
           data: (metrics) {
-            return SingleChildScrollView(
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -126,7 +130,7 @@ class HomeScreen extends ConsumerWidget {
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        DateTime.now().toString().split(' ')[0], // Simple date display
+                        DateTime.now().formatDateIST(),
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],
@@ -268,7 +272,13 @@ class HomeScreen extends ConsumerWidget {
                             icon: Icons.import_export_rounded,
                             baseColor: const Color(0xFF6A1B9A),
                             onTap: () => context.push('/export'),
-                          )
+                          ),
+                          _ActionCard(
+                            label: 'Folders',
+                            icon: Icons.folder_shared_rounded,
+                            baseColor: const Color(0xFFE91E63),
+                            onTap: () => context.push('/folder-distribution'),
+                          ),
                         ],
                       );
                     }
@@ -634,7 +644,7 @@ class _DetailViewSheet extends ConsumerWidget {
     if (type == 'today_sales') {
       final designNo = (item['products_design'] as Map)['design_no'];
       final partyName = (item['parties'] as Map)['partyname'];
-      final date = DateTime.parse(item['created_at']).toLocal().toString().split(' ')[1].substring(0, 5);
+      final date = DateTime.parse(item['created_at']).formatIST('HH:mm');
       return Card(
         elevation: 0,
         color: AppColors.scaffoldBg,
@@ -907,8 +917,9 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                     ),
                   ],
                 ),
-              );
-            },
+              ),
+            );
+          },
           );
         },
         loading: () => const Center(

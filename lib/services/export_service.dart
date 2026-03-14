@@ -8,6 +8,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import '../utils/date_utils.dart';
 import 'core_providers.dart';
 import 'log_service.dart';
 
@@ -35,8 +36,8 @@ class ExportService {
   String _formatTimestamp(String? timestamp) {
     if (timestamp == null || timestamp.isEmpty) return '';
     try {
-      final dt = DateTime.parse(timestamp).toLocal();
-      return DateFormat('dd-MM-yyyy HH:mm:ss').format(dt);
+      final dt = DateTime.parse(timestamp).toIST();
+      return dt.formatIST('dd-MM-yyyy HH:mm:ss');
     } catch (e) {
       return timestamp.split('T').first; // Fallback to date part
     }
@@ -128,7 +129,7 @@ class ExportService {
         ]);
       }
 
-      final dateStr = DateFormat('dd-MM-yyyy').format(DateTime.now());
+      final dateStr = DateTime.now().formatIST('dd-MM-yyyy');
       final safeName = _sanitizeFilename(shopName);
       final fileName = '${safeName}_Sales_$dateStr.xlsx';
       final byteData = Uint8List.fromList(excel.encode()!);
@@ -203,7 +204,7 @@ class ExportService {
 
       final periodText = startDate != null && endDate != null
           ? 'REPORT PERIOD: ${DateFormat('dd-MM-yyyy').format(startDate)} TO ${DateFormat('dd-MM-yyyy').format(endDate)}'
-          : 'REPORT DATE: ${DateFormat('dd-MM-yyyy').format(DateTime.now())}';
+          : 'REPORT DATE: ${DateTime.now().toIST().formatIST('dd-MM-yyyy')}';
       
       var periodCell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 1));
       periodCell.value = TextCellValue(periodText);
@@ -260,7 +261,7 @@ class ExportService {
         currentRow++;
       }
 
-      final dateStr = DateFormat('dd-MM-yyyy').format(DateTime.now());
+      final dateStr = DateTime.now().formatIST('dd-MM-yyyy');
       final safeName = _sanitizeFilename(shopName);
       final fileName = '${safeName}_MiracleSales_$dateStr.xlsx';
       final byteData = Uint8List.fromList(excel.encode()!);
@@ -316,7 +317,7 @@ class ExportService {
         ]);
       }
 
-      final dateStr = DateFormat('dd-MM-yyyy').format(DateTime.now());
+      final dateStr = DateTime.now().formatIST('dd-MM-yyyy');
       final safeName = _sanitizeFilename(shopName);
       final fileName = '${safeName}_Stock_$dateStr.xlsx';
       final byteData = Uint8List.fromList(excel.encode()!);
@@ -384,7 +385,7 @@ class ExportService {
         ]);
       }
 
-      final dateStr = DateFormat('dd-MM-yyyy').format(DateTime.now());
+      final dateStr = DateTime.now().formatIST('dd-MM-yyyy');
       final safeName = _sanitizeFilename(shopName);
       final fileName = '${safeName}_Purchase_$dateStr.xlsx';
       final byteData = Uint8List.fromList(excel.encode()!);
@@ -433,7 +434,7 @@ class ExportService {
     final uint8List = Uint8List.fromList(await pdf.save());
     final safeTitle = _sanitizeFilename(title);
     final safeName = _sanitizeFilename(shopName);
-    final dateStr = DateFormat('dd-MM-yyyy').format(DateTime.now());
+    final dateStr = DateTime.now().formatIST('dd-MM-yyyy');
     final fileName = '${safeName}_${safeTitle}_$dateStr.pdf';
     
     await _deliverFile(

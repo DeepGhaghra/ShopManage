@@ -1,3 +1,5 @@
+import '../utils/date_utils.dart';
+
 class SalesEntry {
   final int id;
   final DateTime date;
@@ -75,8 +77,8 @@ class SalesEntry {
       quantity: json['quantity'] as int,
       rate: json['rate'] as int,
       amount: json['amount'] as int,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      modifiedAt: DateTime.parse(json['modified_at'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String).toIST(),
+      modifiedAt: DateTime.parse(json['modified_at'] as String).toIST(),
       shopId: json['shop_id'] as int,
     );
   }

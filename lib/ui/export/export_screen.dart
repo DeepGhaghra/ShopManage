@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
 import '../common/app_bar_title.dart';
+import '../../utils/date_utils.dart';
 
 enum DateFilter {
   today('Today', Icons.today_rounded),
@@ -37,7 +38,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   bool _isLoading = false;
 
   DateTime get _startDate {
-    final now = DateTime.now();
+    final now = DateTime.now().toIST();
     switch (_selectedFilter) {
       case DateFilter.today:
         return DateTime(now.year, now.month, now.day);
@@ -58,7 +59,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   }
 
   DateTime get _endDate {
-    final now = DateTime.now();
+    final now = DateTime.now().toIST();
     switch (_selectedFilter) {
       case DateFilter.today:
       case DateFilter.last7Days:
@@ -83,10 +84,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().toIST().add(const Duration(days: 365)),
       initialDateRange: _customStartDate != null && _customEndDate != null
           ? DateTimeRange(start: _customStartDate!, end: _customEndDate!)
-          : DateTimeRange(start: DateTime.now(), end: DateTime.now()),
+          : DateTimeRange(start: DateTime.now().toIST(), end: DateTime.now().toIST()),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -218,8 +219,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   }
 
   Widget _buildDateDisplay() {
-    final startStr = DateFormat('dd MMM yyyy').format(_startDate);
-    final endStr = DateFormat('dd MMM yyyy').format(_endDate);
+    final startStr = _startDate.formatDateIST();
+    final endStr = _endDate.formatDateIST();
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),

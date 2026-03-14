@@ -4,7 +4,7 @@ import '../models/product_head.dart';
 import '../models/products_design.dart';
 import 'core_providers.dart';
 
-import '../services/log_service.dart';
+import 'log_service.dart';
 
 class ProductRepository {
   final SupabaseClient _client;

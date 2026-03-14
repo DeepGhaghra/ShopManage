@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/product_providers.dart';
 import '../../services/core_providers.dart';
+import '../../services/log_service.dart' show logServiceProvider;
 import 'package:shopmanage/theme/app_theme.dart';
 import '../../models/shop.dart';
 import 'package:intl/intl.dart';
 import '../common/error_view.dart';
+import '../common/searchable_selector.dart';
 import 'admin_scaffold.dart';
 
 class ProductHeadManagementScreen extends ConsumerStatefulWidget {
@@ -87,6 +89,7 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
         _exitBulkMode();
       }
     } catch (e) {
+      ref.read(logServiceProvider).error('Admin', 'Bulk adjustment failed', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
@@ -476,41 +479,96 @@ class _ProductHeadManagementScreenState extends ConsumerState<ProductHeadManagem
                         ],
                       );
                     }),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     foldersAsync.when(
-                      data: (folders) => DropdownButtonFormField<int>(
-                        value: selectedFolderId,
-                        decoration: const InputDecoration(
-                          labelText: 'Select Folder',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: folders.map((f) => DropdownMenuItem(
-                          value: f['id'] as int,
-                          child: Text(f['folder_name']),
-                        )).toList(),
-                        onChanged: (val) => setDialogState(() => selectedFolderId = val),
-                      ),
-                      loading: () => const CircularProgressIndicator(),
+                      data: (folders) {
+                        final folder = folders.firstWhere((f) => f['id'] == selectedFolderId, orElse: () => {'folder_name': 'Select Category'});
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('FOLDER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1, color: AppColors.textSecondary)),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () => SearchableSelector.show(
+                                context: context,
+                                title: 'Select Folder',
+                                items: folders,
+                                labelKey: 'folder_name',
+                                icon: Icons.folder_open_rounded,
+                                iconColor: AppColors.cardStock,
+                                onSelected: (id) => setDialogState(() => selectedFolderId = id),
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.folder_open_rounded, size: 18, color: AppColors.cardStock),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: Text(folder['folder_name'], style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
+                                    const Icon(Icons.search_rounded, size: 16, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => const LinearProgressIndicator(),
                       error: (_, __) => const Text('Error loading folders'),
                     ),
-                    const SizedBox(height: 16),
-                    if (!isEditing) // Only allow shop selection for new products
+                    if (!isEditing) ...[
+                      const SizedBox(height: 20),
                       shopsAsync.when(
-                        data: (shops) => DropdownButtonFormField<int>(
-                          value: selectedShopId,
-                          decoration: const InputDecoration(
-                            labelText: 'Select Shop',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: shops.map((s) => DropdownMenuItem(
-                            value: s.id,
-                            child: Text(s.shopName),
-                          )).toList(),
-                          onChanged: (val) => setDialogState(() => selectedShopId = val),
-                        ),
-                        loading: () => const CircularProgressIndicator(),
+                        data: (shops) {
+                          final selectedShop = shops.where((s) => s.id == selectedShopId).firstOrNull;
+                          final shopName = selectedShop?.shopName ?? 'Select Shop';
+                          final shopMap = shops.map((s) => {'id': s.id, 'shop_name': s.shopName}).toList();
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('ASSIGN TO SHOP', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1, color: AppColors.textSecondary)),
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: () => SearchableSelector.show(
+                                  context: context,
+                                  title: 'Select Shop',
+                                  items: shopMap,
+                                  labelKey: 'shop_name',
+                                  icon: Icons.storefront_rounded,
+                                  iconColor: AppColors.cardSales,
+                                  onSelected: (id) => setDialogState(() => selectedShopId = id),
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.shade300),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.storefront_rounded, size: 18, color: AppColors.cardSales),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: Text(shopName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
+                                      const Icon(Icons.search_rounded, size: 16, color: Colors.grey),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                        loading: () => const SizedBox(),
                         error: (_, __) => const Text('Error loading shops'),
                       ),
+                    ],
                   ],
                 ),
               ),

@@ -5,6 +5,7 @@ import '../../services/core_providers.dart';
 import 'package:shopmanage/theme/app_theme.dart';
 import '../../models/shop.dart';
 import '../common/error_view.dart';
+import '../common/searchable_selector.dart';
 import 'admin_scaffold.dart';
 
 class FolderManagementScreen extends ConsumerStatefulWidget {
@@ -221,19 +222,48 @@ class _FolderManagementScreenState extends ConsumerState<FolderManagementScreen>
                   const SizedBox(height: 16),
                   if (!isEditing)
                     shopsAsync.when(
-                      data: (shops) => DropdownButtonFormField<int>(
-                        value: selectedShopId,
-                        decoration: const InputDecoration(
-                          labelText: 'Select Shop',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: shops.map((s) => DropdownMenuItem(
-                          value: s.id,
-                          child: Text(s.shopName),
-                        )).toList(),
-                        onChanged: (val) => setDialogState(() => selectedShopId = val),
-                      ),
-                      loading: () => const CircularProgressIndicator(),
+                      data: (shops) {
+                        final selectedShop = shops.where((s) => s.id == selectedShopId).firstOrNull;
+                        final shopName = selectedShop?.shopName ?? 'Select Shop';
+                        final shopMap = shops.map((s) => {'id': s.id, 'shop_name': s.shopName}).toList();
+                        
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('ASSIGN TO SHOP', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1, color: AppColors.textSecondary)),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () => SearchableSelector.show(
+                                context: context,
+                                title: 'Select Shop',
+                                items: shopMap,
+                                labelKey: 'shop_name',
+                                icon: Icons.storefront_rounded,
+                                iconColor: AppColors.cardSales,
+                                onSelected: (id) => setDialogState(() => selectedShopId = id),
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.storefront_rounded, size: 18, color: AppColors.cardSales),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: Text(shopName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
+                                    const Icon(Icons.search_rounded, size: 16, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => const LinearProgressIndicator(),
                       error: (_, __) => const Text('Error loading shops'),
                     ),
                 ],

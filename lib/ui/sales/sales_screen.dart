@@ -462,63 +462,73 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-                  child: Icon(_editingInvoiceNo != null ? Icons.edit_document : Icons.shopping_cart_checkout, color: AppColors.primary),
+                  child: Icon(_editingInvoiceNo != null ? Icons.edit_document : Icons.shopping_cart_checkout, color: AppColors.primary, size: 20),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _editingInvoiceNo != null ? 'Update Sales' : 'Create Invoice', 
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary)
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary)
                       ),
                       if (_editingInvoiceNo != null)
                         Container(
-                          margin: const EdgeInsets.only(top: 6),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          margin: const EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.blue.shade50, 
-                            borderRadius: BorderRadius.circular(6), 
+                            borderRadius: BorderRadius.circular(4), 
                             border: Border.all(color: Colors.blue.shade200, width: 1),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.edit_note, size: 14, color: Colors.blue.shade900),
-                              const SizedBox(width: 4),
-                              Text('EDITING: $_editingInvoiceNo', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Colors.blue.shade900)),
-                            ],
-                          ),
+                          child: Text('EDITING: $_editingInvoiceNo', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blue.shade900)),
                         ),
+                    ],
+                  ),
+                ),
+                // Structured Invoice ID display in a stacked layout
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'INVOICE NO', 
+                        style: TextStyle(
+                          fontSize: 9, 
+                          fontWeight: FontWeight.w900, 
+                          color: Colors.blueGrey.shade700, 
+                          letterSpacing: 0.8
+                        )
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _invoiceController.text, 
+                        style: const TextStyle(
+                          fontSize: 15, 
+                          fontWeight: FontWeight.w900, 
+                          color: AppColors.primary,
+                          letterSpacing: 0.5
+                        )
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // ── Invoice Details ──────────────────────────────────────────
             Builder(builder: (context) {
-              final isMobile = MediaQuery.of(context).size.width < 600;
-              final invoiceField = TextFormField(
-                controller: _invoiceController,
-                readOnly: true,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueGrey),
-                decoration: InputDecoration(
-                  labelText: 'Invoice ID',
-                  labelStyle: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.normal),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                  prefixIcon: const Icon(Icons.tag_rounded, color: Colors.grey, size: 20),
-                ),
-              );
-
               final partyField = partiesAsync.when(
                 data: (parties) {
                   return Autocomplete<Party>(
@@ -616,22 +626,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                 error: (err, stack) => Text('Error loading parties: $err'),
               );
 
-              if (isMobile) {
-                return Column(
-                  children: [
-                    invoiceField,
-                    const SizedBox(height: 12),
-                    partyField,
-                  ],
-                );
-              }
-              return Row(
-                children: [
-                  Expanded(child: invoiceField),
-                  const SizedBox(width: 16),
-                  Expanded(flex: 2, child: partyField),
-                ],
-              );
+              return partyField;
             }),
             const SizedBox(height: 32),
 
@@ -671,6 +666,16 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                     onRemove: () => _removeLine(index),
                     onChanged: () => setState(() {}),
                     onSelected: (row) async {
+                      if (row.isEmpty) {
+                        setState(() {
+                          line.stockRow = null;
+                          line.searchController.clear();
+                          line.quantity = 0;
+                          line.qtyController.clear();
+                          line.rateController.clear();
+                        });
+                        return;
+                      }
                       setState(() { 
                         line.stockRow = row; 
                         line.searchController.text = '${line.designNo}  |  ${line.locationName}  |  ${line.maxQuantity}';
@@ -696,20 +701,20 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             Center(
               child: InkWell(
                 onTap: _addLine,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 20),
-                      const SizedBox(width: 8),
-                      const Text('Add Another Item', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 14),
+                      const SizedBox(width: 6),
+                      const Text('Add Another Item', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary)),
                     ],
                   ),
                 ),
@@ -719,10 +724,10 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
 
             // ── Grand Total + Save ──────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.textPrimary,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Builder(builder: (context) {
                 
@@ -732,15 +737,14 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Total Sheets', style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                        const SizedBox(height: 4),
+                        const Text('Total Sheets', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                         Text(
                           '${_lines.where((l) => l.stockRow != null).fold<int>(0, (sum, l) => sum + l.quantity)}',
-                          style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
+                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
                         ),
                       ],
                     ),
-                    const Icon(Icons.auto_graph_rounded, color: Colors.white24, size: 32),
+                    const Icon(Icons.auto_graph_rounded, color: Colors.white12, size: 24),
                   ],
                 );
                 
@@ -752,14 +756,14 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                         onPressed: _isSaving ? null : () => _saveChallan(print: false),
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           backgroundColor: Colors.white.withValues(alpha: 0.1),
                         ),
-                        child: const Text('Save Only', style: TextStyle(fontWeight: FontWeight.w700)),
+                        child: const Text('Save Only', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       flex: 3,
                       child: ElevatedButton.icon(
@@ -767,12 +771,11 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        icon: const Icon(Icons.print_rounded, size: 18),
-                        label: const Text('Save & Print', style: TextStyle(fontWeight: FontWeight.w900)),
+                        icon: const Icon(Icons.print_rounded, size: 16),
+                        label: const Text('Save & Print', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
                       ),
                     ),
                   ],
@@ -782,7 +785,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     totalSection,
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
                     buttonSection,
                   ],
                 );
@@ -1330,7 +1333,6 @@ class _SaleItemRowState extends State<_SaleItemRow> {
                         onPressed: () { 
                           ctrl.clear(); 
                           widget.onSelected({}); 
-                          setState(() { widget.line.stockRow = null; });
                         },
                       )
                     : null,
@@ -1389,6 +1391,7 @@ class _SaleItemRowState extends State<_SaleItemRow> {
         style: const TextStyle(fontWeight: FontWeight.bold),
         decoration: InputDecoration(
           hintText: 'Rate',
+          helperText: isMobile ? (widget.line.stockRow != null ? ' ' : null) : (widget.line.stockRow != null ? ' ' : null), // Matching space for height alignment
           isDense: true,
           filled: true,
           fillColor: widget.line.stockRow != null ? Colors.white : Colors.grey.shade50,
@@ -1437,6 +1440,7 @@ class _SaleItemRowState extends State<_SaleItemRow> {
                     color: Colors.blueGrey.shade50,
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  margin: const EdgeInsets.only(bottom: 22), // Align with text fields height
                   child: Column(
                     children: [
                       const Text('TOTAL', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
@@ -1475,13 +1479,13 @@ class _SaleItemRowState extends State<_SaleItemRow> {
     }
 
     return Container(
-      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
-      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 10 : 16),
+      padding: EdgeInsets.all(isMobile ? 10 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.divider),
-        boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 6, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: content,
     );

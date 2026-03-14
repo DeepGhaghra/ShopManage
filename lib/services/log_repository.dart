@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 import '../models/log_entry.dart';
 
 class LogRepository {
@@ -17,9 +18,12 @@ class LogRepository {
         'details': entry.details,
         'user_email': user?.email,
       });
-    } catch (_) {
+    } catch (e) {
       // If logging fails (RLS or network), we don't want to crash the app
       // or recurse indefinitely. Local logging will still have it.
+      if (kDebugMode) {
+        print('Remote logging failed: $e');
+      }
     }
   }
 

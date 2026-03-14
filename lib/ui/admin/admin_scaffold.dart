@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shopmanage/theme/app_theme.dart';
 import '../../services/core_providers.dart';
 import '../../models/shop.dart';
+import '../common/searchable_selector.dart';
 
 class AdminScaffold extends ConsumerWidget {
   final String title;
@@ -56,60 +57,54 @@ class AdminScaffold extends ConsumerWidget {
           if (onShopChanged != null)
             shopsAsync.when(
               data: (shops) {
-                final selectedShop = selectedShopId == null 
+                final selectedShop = (selectedShopId == null || shops.isEmpty) 
                     ? null 
                     : shops.firstWhere((s) => s.id == selectedShopId, orElse: () => shops.first);
                 
                 final screenWidth = MediaQuery.of(context).size.width;
                 final dropDownWidth = screenWidth < 380 ? 100.0 : (isMobile ? 120.0 : 250.0);
                 
-                return ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: dropDownWidth),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (selectedShop != null && !isMobile)
-                        Container(
-                          margin: const EdgeInsets.only(right: 6),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
+                final shopMap = [
+                  {'id': null, 'shop_name': 'All Shops'},
+                  ...shops.map((s) => {'id': s.id, 'shop_name': s.shopName}),
+                ];
+                
+                return InkWell(
+                  onTap: () => SearchableSelector.show(
+                    context: context,
+                    title: 'Switch Shop',
+                    items: shopMap,
+                    labelKey: 'shop_name',
+                    icon: Icons.storefront_rounded,
+                    iconColor: AppColors.primary,
+                    onSelected: (id) => onShopChanged!(id), 
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.storefront_rounded, color: Colors.white.withOpacity(0.9), size: 16),
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: dropDownWidth),
                           child: Text(
-                            selectedShop.shopShortName ?? selectedShop.shopName.substring(0, 3).toUpperCase(),
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
+                            selectedShop?.shopName ?? 'All Shops',
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      Flexible(
-                        child: Theme(
-                          data: Theme.of(context).copyWith(canvasColor: AppColors.primary),
-                          child: DropdownButton<int?>(
-                            value: selectedShopId,
-                            underline: const SizedBox(),
-                            isExpanded: true,
-                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 16),
-                            dropdownColor: AppColors.primary,
-                            items: [
-                              DropdownMenuItem(
-                                value: null, 
-                                child: Text(
-                                  screenWidth < 380 ? 'Shops' : 'All Shops', 
-                                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              ...shops.map((s) => DropdownMenuItem(
-                                value: s.id,
-                                child: Text(s.shopName, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
-                              )),
-                            ],
-                            onChanged: onShopChanged,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                    ],
+                        const SizedBox(width: 4),
+                        Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white.withOpacity(0.7), size: 16),
+                      ],
+                    ),
                   ),
                 );
               },

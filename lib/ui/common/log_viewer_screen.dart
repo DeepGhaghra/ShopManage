@@ -24,6 +24,9 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
   @override
   void initState() {
     super.initState();
+    // Auto-sync remote logs on entry
+    Future.microtask(() => ref.read(logServiceProvider).syncRemoteLogs());
+
     // Poll for new logs every 2 seconds
     _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       final logService = ref.read(logServiceProvider);

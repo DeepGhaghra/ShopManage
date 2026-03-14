@@ -5,11 +5,15 @@ import '../../services/core_providers.dart';
 import '../../theme/app_theme.dart';
 import 'confirmation_dialog.dart';
 
+import '../common/searchable_selector.dart';
+
 class AppBarActions extends ConsumerWidget {
   const AppBarActions({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final shopsAsync = ref.watch(associatedShopsProvider);
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -17,8 +21,26 @@ class AppBarActions extends ConsumerWidget {
           icon: const Icon(Icons.storefront_rounded, color: AppColors.primary),
           tooltip: 'Switch Shop',
           onPressed: () {
-            ref.read(activeShopProvider.notifier).setShop(null);
-            context.go('/');
+            shopsAsync.whenData((shops) {
+              if (shops.isEmpty) return;
+              
+              final shopMap = shops.map((s) => {
+                'id': s, // Pass the whole object
+                'shop_name': s.shopName,
+              }).toList();
+
+              SearchableSelector.show(
+                context: context,
+                title: 'Switch Workspace',
+                items: shopMap,
+                labelKey: 'shop_name',
+                icon: Icons.storefront_rounded,
+                iconColor: AppColors.primary,
+                onSelected: (selectedShop) {
+                  ref.read(activeShopProvider.notifier).setShop(selectedShop);
+                },
+              );
+            });
           },
         ),
         IconButton(

@@ -7,6 +7,7 @@ import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
+import '../common/app_bar_title.dart';
 
 enum DateFilter {
   today('Today', Icons.today_rounded),
@@ -456,16 +457,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           );
         }),
         centerTitle: true,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (activeShop != null)
-              Text(activeShop.shopName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
-            Text(
-              'Export Center',
-              style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.textPrimary, fontSize: MediaQuery.of(context).size.width < 600 ? 18 : 20),
-            ),
-          ],
+        title: CustomAppBarTitle(
+          title: 'Export Center',
+          subtitle: activeShop?.shopName,
         ),
         elevation: 0,
         backgroundColor: Colors.white,

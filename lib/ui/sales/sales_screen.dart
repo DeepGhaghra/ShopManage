@@ -12,6 +12,7 @@ import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
+import '../common/app_bar_title.dart';
 import '../common/confirmation_dialog.dart';
 import '../common/loading_overlay.dart';
 import '../common/error_view.dart';
@@ -959,25 +960,10 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
           );
         }),
         centerTitle: true,
-        title: Builder(builder: (context) {
-          final isMobile = MediaQuery.of(context).size.width < 600;
-          final activeShop = ref.watch(activeShopProvider);
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (activeShop != null)
-                Text(activeShop.shopName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
-              Text(
-                'Sales Entry', 
-                style: TextStyle(
-                  fontWeight: FontWeight.w900, 
-                  color: AppColors.textPrimary,
-                  fontSize: isMobile ? 18 : 20,
-                )
-              ),
-            ],
-          );
-        }),
+        title: CustomAppBarTitle(
+          title: 'Sales Entry',
+          subtitle: ref.watch(activeShopProvider)?.shopName,
+        ),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         actions: const [
           AppBarActions(),

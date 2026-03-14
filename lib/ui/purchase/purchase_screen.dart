@@ -16,6 +16,7 @@ import '../../theme/app_theme.dart';
 import '../common/loading_overlay.dart';
 import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
+import '../common/app_bar_title.dart';
 import '../common/confirmation_dialog.dart';
 import '../../utils/error_translator.dart';
 
@@ -351,19 +352,12 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
         elevation: 0,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
+        centerTitle: true,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: Builder(builder: (context) {
-          final isMobile = MediaQuery.of(context).size.width < 600;
-          final activeShop = ref.watch(activeShopProvider);
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (activeShop != null)
-                Text(activeShop.shopName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
-              Text('Purchase Entry', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.textPrimary, fontSize: isMobile ? 18 : 20)),
-            ],
-          );
-        }),
+        title: CustomAppBarTitle(
+          title: 'Purchase Entry',
+          subtitle: ref.watch(activeShopProvider)?.shopName,
+        ),
         actions: const [
           AppBarActions(),
         ],

@@ -10,6 +10,7 @@ import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
 import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
+import '../common/app_bar_title.dart';
 
 class PartiesScreen extends ConsumerStatefulWidget {
   const PartiesScreen({super.key});
@@ -52,24 +53,12 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
         }),
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Builder(builder: (context) {
-          final isMobile = MediaQuery.of(context).size.width < 600;
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (activeShop != null)
-                Text(activeShop.shopName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
-              Text(
-                'Parties', 
-                style: TextStyle(
-                  fontWeight: FontWeight.w900, 
-                  color: AppColors.textPrimary,
-                  fontSize: isMobile ? 18 : 20,
-                )
-              ),
-            ],
-          );
-        }),
+        centerTitle: true,
+        surfaceTintColor: Colors.transparent,
+        title: CustomAppBarTitle(
+          title: 'Parties',
+          subtitle: ref.watch(activeShopProvider)?.shopName,
+        ),
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search, color: AppColors.primary),

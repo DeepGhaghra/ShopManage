@@ -10,6 +10,7 @@ import '../common/error_view.dart';
 import '../common/confirmation_dialog.dart';
 import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
+import '../common/app_bar_title.dart';
 import '../../utils/error_translator.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -97,30 +98,10 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Builder(builder: (context) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                activeShop.shopName, 
-                style: TextStyle(
-                  fontWeight: FontWeight.w800, 
-                  color: AppColors.textPrimary,
-                  fontSize: MediaQuery.of(context).size.width < 600 ? 16 : 20,
-                )
-              ),
-              Text(
-                'Dashboard',
-                style: TextStyle(
-                  fontSize: MediaQuery.of(context).size.width < 600 ? 9 : 11, 
-                  fontWeight: FontWeight.bold, 
-                  color: AppColors.accent, 
-                  letterSpacing: 0.5
-                ),
-              ),
-            ],
-          );
-        }),
+        title: CustomAppBarTitle(
+          title: 'Dashboard',
+          subtitle: activeShop.shopName,
+        ),
         actions: const [
           AppBarActions(),
         ],

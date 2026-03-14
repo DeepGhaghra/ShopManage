@@ -11,6 +11,7 @@ import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
 import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
+import '../common/app_bar_title.dart';
 import 'design_history_sheet.dart';
 
 class StockScreen extends ConsumerStatefulWidget {
@@ -70,27 +71,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
             ],
           );
         }),
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Stock View', 
-              style: TextStyle(
-                fontWeight: FontWeight.w800, 
-                color: AppColors.textPrimary,
-                fontSize: isMobile ? 18 : 20,
-              )
-            ),
-            if (shopName.isNotEmpty)
-              Text(
-                shopName,
-                style: TextStyle(
-                  fontSize: isMobile ? 10 : 12, 
-                  fontWeight: FontWeight.w600, 
-                  color: AppColors.textSecondary,
-                ),
-              ),
-          ],
+        title: CustomAppBarTitle(
+          title: 'Stock View',
+          subtitle: shopName,
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -98,10 +81,12 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add_shopping_cart_rounded, color: AppColors.primary),
+            tooltip: 'Add Stock',
             onPressed: () => _showAddStockDialog(context, ref),
           ),
           IconButton(
             icon: const Icon(Icons.compare_arrows_rounded, color: AppColors.primary),
+            tooltip: 'Transfer Stock',
             onPressed: () => _showTransferStockDialog(context, ref),
           ),
           const AppBarActions(),

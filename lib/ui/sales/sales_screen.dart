@@ -130,7 +130,22 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       final invNo = await ref.read(salesRepositoryProvider).generateInvoiceNo(activeShop.id);
       _invoiceController.text = invNo;
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text(ErrorTranslator.translate(e), style: const TextStyle(fontWeight: FontWeight.w600))),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isInitializing = false);
     }
@@ -148,7 +163,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     final newLine = _SaleItemLine();
     setState(() => _lines.add(newLine));
     // Focus the new line after it's rendered
-    Future.microtask(() => newLine.searchFocusNode.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) => newLine.searchFocusNode.requestFocus());
   }
 
   Future<void> _removeLine(int index) async {
@@ -271,24 +286,76 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
 
   Future<void> _saveChallan({bool print = false}) async {
     if (_selectedParty == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a Party.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Text('Please select a Party.', style: TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
       return;
     }
 
     final seen = <String>{};
     for (var line in _lines) {
       if (line.stockRow == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a Design for all items.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.inventory_2_outlined, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Please select a Design for all items.', style: TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
         return;
       }
       if (line.quantity <= 0 || line.quantity > line.maxQuantity) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invalid quantity for ${line.designNo}.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text('Invalid quantity for ${line.designNo}.', style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
         return;
       }
       
       final key = '${line.designId}_${line.locationId}';
       if (seen.contains(key)) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Duplicate entry found: ${line.designNo} at ${line.locationName}. Please remove duplicates.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.copy_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Duplicate entry found: ${line.designNo} at ${line.locationName}.', style: const TextStyle(fontWeight: FontWeight.w600))),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
         return;
       }
       seen.add(key);
@@ -350,10 +417,16 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
         );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_editingInvoiceNo != null ? 'Challan updated successfully!' : 'Challan saved successfully!'),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(_editingInvoiceNo != null ? 'Challan updated successfully!' : 'Challan saved successfully!', style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
 
@@ -391,10 +464,16 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(ErrorTranslator.translate(e)),
+            content: Row(
+              children: [
+                const Icon(Icons.error_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text(ErrorTranslator.translate(e), style: const TextStyle(fontWeight: FontWeight.w600))),
+              ],
+            ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -544,9 +623,12 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                         _selectedParty = party;
                         _partySearchController.text = party.partyName;
                       });
-                      if (_lines.isNotEmpty) {
-                        _lines.first.searchFocusNode.requestFocus();
-                      }
+                      // Use post frame callback to avoid assertion errors while overlay is closing
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && _lines.isNotEmpty) {
+                          _lines.first.searchFocusNode.requestFocus();
+                        }
+                      });
                     },
                     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
                       if (_selectedParty != null && controller.text.isEmpty) {
@@ -689,7 +771,10 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                       } else {
                         setState(() => line.rateController.text = line.rate.toString());
                       }
-                      line.qtyFocusNode.requestFocus(); // Auto-focus Qty after selection
+                      // Safely shift focus in next frame to avoid overlay assertions
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) line.qtyFocusNode.requestFocus();
+                      });
                     },
                   ),
                 );
@@ -1114,7 +1199,22 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                          try {
                                            final activeShop = ref.read(activeShopProvider);
                                            if (activeShop == null) {
-                                             if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Shop data not loaded')));
+                                             if (context.mounted) {
+                                               ScaffoldMessenger.of(context).showSnackBar(
+                                                 SnackBar(
+                                                   content: const Row(
+                                                     children: [
+                                                       Icon(Icons.store_rounded, color: Colors.white, size: 20),
+                                                       SizedBox(width: 8),
+                                                       Text('Shop data not loaded', style: TextStyle(fontWeight: FontWeight.w600)),
+                                                     ],
+                                                   ),
+                                                   backgroundColor: AppColors.error,
+                                                   behavior: SnackBarBehavior.floating,
+                                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                 ),
+                                               );
+                                             }
                                              return;
                                            }
         
@@ -1122,7 +1222,22 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                            final stock = stockAsync.value;
         
                                            if (parties == null || stock == null) {
-                                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data still loading, please wait...')));
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: const Row(
+                                                      children: [
+                                                        Icon(Icons.hourglass_empty_rounded, color: Colors.white, size: 20),
+                                                        SizedBox(width: 8),
+                                                        Text('Data still loading, please wait...', style: TextStyle(fontWeight: FontWeight.w600)),
+                                                      ],
+                                                    ),
+                                                    backgroundColor: Colors.blueGrey.shade700,
+                                                    behavior: SnackBarBehavior.floating,
+                                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                  ),
+                                                );
+                                              }
                                               return;
                                            }
         
@@ -1174,9 +1289,20 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                            );
                                          } catch (e) {
                                            if (context.mounted) {
-                                             ScaffoldMessenger.of(context).showSnackBar(
-                                               SnackBar(content: Text('Print Error: $e'), backgroundColor: Colors.red),
-                                             );
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Row(
+                                                    children: [
+                                                      const Icon(Icons.print_disabled_rounded, color: Colors.white, size: 20),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(child: Text('Print Error: $e', style: const TextStyle(fontWeight: FontWeight.w600))),
+                                                    ],
+                                                  ),
+                                                  backgroundColor: AppColors.error,
+                                                  behavior: SnackBarBehavior.floating,
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                ),
+                                              );
                                            }
                                          }
                                       },

@@ -352,7 +352,13 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: const Text('⚠️ Name already exists'),
+                                  content: const Row(
+                                    children: [
+                                      Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                                      SizedBox(width: 8),
+                                      Text('Name already exists', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
                                   backgroundColor: Colors.orange.shade800,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -391,7 +397,13 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(party == null ? '✅ Party added!' : '✅ Party updated!'),
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(party == null ? 'Party added!' : 'Party updated!', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
                                   backgroundColor: AppColors.success,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -403,7 +415,20 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                             ref.read(logServiceProvider).error('Parties', 'Failed to ${party == null ? 'add' : 'update'} party', e);
                             setState(() => isSaving = false);
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                                      const SizedBox(width: 8),
+                                      Expanded(child: Text(ErrorTranslator.translate(e), style: const TextStyle(fontWeight: FontWeight.w600))),
+                                    ],
+                                  ),
+                                  backgroundColor: AppColors.error,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
                             }
                           }
                         }

@@ -52,7 +52,22 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
       });
     } catch (e) {
       ref.read(logServiceProvider).error('Pricelist', 'Failed to fetch party pricelist', e);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${ErrorTranslator.translate(e)}')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Error: ${ErrorTranslator.translate(e)}', style: const TextStyle(fontWeight: FontWeight.w600))),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoadingPrices = false);
     }
@@ -100,7 +115,22 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
       }
     } catch (e) {
       ref.read(logServiceProvider).error('Pricelist', 'Failed to update party price', e);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${ErrorTranslator.translate(e)}')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Error: ${ErrorTranslator.translate(e)}', style: const TextStyle(fontWeight: FontWeight.w600))),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -202,6 +232,10 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
                           onSelected: (party) {
                             setState(() => _selectedParty = party);
                             _fetchPartyPricelist(party.id);
+                            // Ensure focus is handled after state transition to avoid overlay assertions
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) FocusScope.of(context).unfocus();
+                            });
                           },
                           fieldViewBuilder: (context, controller, focusNode, onSub) {
                             return TextFormField(

@@ -727,7 +727,15 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.textPrimary,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               child: Builder(builder: (context) {
                 
@@ -737,14 +745,35 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Total Sheets', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                        Text(
+                          'TOTAL SHEETS', 
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5), 
+                            fontSize: 9, 
+                            fontWeight: FontWeight.w900, 
+                            letterSpacing: 1.5
+                          )
+                        ),
+                        const SizedBox(height: 2),
                         Text(
                           '${_lines.where((l) => l.stockRow != null).fold<int>(0, (sum, l) => sum + l.quantity)}',
-                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                          style: const TextStyle(
+                            color: Colors.white, 
+                            fontSize: 28, 
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5
+                          ),
                         ),
                       ],
                     ),
-                    const Icon(Icons.auto_graph_rounded, color: Colors.white12, size: 24),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.inventory_2_rounded, color: Colors.white24, size: 20),
+                    ),
                   ],
                 );
                 
@@ -752,30 +781,58 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                   children: [
                     Expanded(
                       flex: 2,
-                      child: TextButton(
-                        onPressed: _isSaving ? null : () => _saveChallan(print: false),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1.5),
                         ),
-                        child: const Text('Save Only', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                        child: TextButton(
+                          onPressed: _isSaving ? null : () => _saveChallan(print: false),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.5)),
+                            backgroundColor: Colors.white.withValues(alpha: 0.05),
+                          ),
+                          child: const Text('Save Only', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.2)),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       flex: 3,
-                      child: ElevatedButton.icon(
-                        onPressed: _isSaving ? null : () => _saveChallan(print: true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.cardSales,
+                              AppColors.cardSales.withValues(alpha: 0.8),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.cardSales.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        icon: const Icon(Icons.print_rounded, size: 16),
-                        label: const Text('Save & Print', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                        child: ElevatedButton.icon(
+                          onPressed: _isSaving ? null : () => _saveChallan(print: true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shadowColor: Colors.transparent,
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.print_rounded, size: 18),
+                          label: const Text('Save & Print', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.3)),
+                        ),
                       ),
                     ),
                   ],
@@ -785,7 +842,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     totalSection,
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     buttonSection,
                   ],
                 );

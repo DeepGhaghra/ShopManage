@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
+import '../../services/log_service.dart';
 import '../../services/core_providers.dart';
 import 'package:shopmanage/theme/app_theme.dart';
 import '../../models/shop.dart';
@@ -257,10 +258,13 @@ class _LocationManagementScreenState extends ConsumerState<LocationManagementScr
 
     if (result == true && nameController.text.trim().isNotEmpty && selectedShopId != null) {
       try {
+        final log = ref.read(logServiceProvider);
         if (isEditing) {
           await ref.read(shopRepositoryProvider).updateLocation(location['id'], nameController.text.trim());
+          log.success('Admin', 'Location "${nameController.text.trim()}" updated');
         } else {
           await ref.read(shopRepositoryProvider).createLocation(nameController.text.trim(), selectedShopId!);
+          log.success('Admin', 'New location "${nameController.text.trim()}" created');
         }
         ref.invalidate(allLocationsProvider);
         if (context.mounted) {
@@ -269,6 +273,7 @@ class _LocationManagementScreenState extends ConsumerState<LocationManagementScr
           );
         }
       } catch (e) {
+        ref.read(logServiceProvider).error('Admin', 'Failed to ${isEditing ? 'update' : 'create'} location', e);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),

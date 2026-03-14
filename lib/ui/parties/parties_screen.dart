@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/log_service.dart';
 import '../../services/party_providers.dart';
 import '../../services/core_providers.dart';
 import '../../models/party.dart';
@@ -362,6 +363,7 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                           }
 
                           try {
+                            final log = ref.read(logServiceProvider);
                             final repo = ref.read(partyRepositoryProvider);
                             if (party == null) {
                               await repo.addParty(Party(
@@ -372,6 +374,7 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                                 timeAdded: DateTime.now(),
                                 shopId: activeShop.id,
                               ));
+                              log.success('Parties', 'New party "${nameController.text.trim()}" added');
                             } else {
                               await repo.updateParty(Party(
                                 id: party.id,
@@ -381,6 +384,7 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                                 timeAdded: party.timeAdded,
                                 shopId: party.shopId,
                               ));
+                              log.success('Parties', 'Party "${nameController.text.trim()}" details updated');
                             }
                             
                             if (context.mounted) {
@@ -396,6 +400,7 @@ void _showAddEditPartyDialog(BuildContext context, WidgetRef ref, {Party? party}
                             }
                             ref.invalidate(partiesProvider);
                           } catch (e) {
+                            ref.read(logServiceProvider).error('Parties', 'Failed to ${party == null ? 'add' : 'update'} party', e);
                             setState(() => isSaving = false);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));

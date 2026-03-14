@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core_providers.dart';
+import 'log_service.dart';
 
 // ─── Single purchase line (shared between manual + bulk) ──────────────────────
 class PurchaseLine {
@@ -20,8 +21,9 @@ class PurchaseLine {
 // ─── Repository ───────────────────────────────────────────────────────────────
 class PurchaseRepository {
   final SupabaseClient _client;
+  final LogService _log;
 
-  PurchaseRepository(this._client);
+  PurchaseRepository(this._client, this._log);
 
   Future<void> addPurchase({
     required int shopId,
@@ -31,55 +33,62 @@ class PurchaseRepository {
     required int quantity,
     required int locationId,
   }) async {
-    // 1. Insert Purchase Record
-    final purchaseResponse = await _client
-        .from('purchase')
-        .insert({
-          'shop_id':   shopId,
-          'date':      date,
-          'party_id':  partyId,
-          'design_id': designId,
-          'quantity':  quantity,
-        })
-        .select()
-        .single();
+    try {
+      // 1. Insert Purchase Record
+      final purchaseResponse = await _client
+          .from('purchase')
+          .insert({
+            'shop_id':   shopId,
+            'date':      date,
+            'party_id':  partyId,
+            'design_id': designId,
+            'quantity':  quantity,
+          })
+          .select()
+          .single();
 
-    final purchaseId = purchaseResponse['id'] as int;
+      final purchaseId = purchaseResponse['id'] as int;
 
-    // 2. Increment Stock (upsert-style)
-    final stockRes = await _client
-        .from('stock')
-        .select('id, quantity')
-        .eq('shop_id',     shopId)
-        .eq('design_id',   designId)
-        .eq('location_id', locationId)
-        .maybeSingle();
+      // 2. Increment Stock (upsert-style)
+      final stockRes = await _client
+          .from('stock')
+          .select('id, quantity')
+          .eq('shop_id',     shopId)
+          .eq('design_id',   designId)
+          .eq('location_id', locationId)
+          .maybeSingle();
 
-    if (stockRes != null) {
-      final newQty = (stockRes['quantity'] as int) + quantity;
-      await _client.from('stock').update({
-        'quantity':    newQty,
-        'modified_at': DateTime.now().toIso8601String(),
-      }).eq('id', stockRes['id']);
-    } else {
-      await _client.from('stock').insert({
-        'shop_id':     shopId,
-        'design_id':   designId,
-        'location_id': locationId,
-        'quantity':    quantity,
-        'modified_at': DateTime.now().toIso8601String(),
+      if (stockRes != null) {
+        final newQty = (stockRes['quantity'] as int) + quantity;
+        await _client.from('stock').update({
+          'quantity':    newQty,
+          'modified_at': DateTime.now().toIso8601String(),
+        }).eq('id', stockRes['id']);
+      } else {
+        await _client.from('stock').insert({
+          'shop_id':     shopId,
+          'design_id':   designId,
+          'location_id': locationId,
+          'quantity':    quantity,
+          'modified_at': DateTime.now().toIso8601String(),
+        });
+      }
+
+      // 3. Log Stock Transaction
+      await _client.from('stock_transactions').insert({
+        'shop_id':          shopId,
+        'design_id':        designId,
+        'location_id':      locationId,
+        'quantity':         quantity,
+        'transaction_type': 'purchase',
+        'reference_id':     purchaseId,
       });
+      
+      _log.success('Purchase', 'Purchase added for design ID $designId (Qty: $quantity)');
+    } catch (e) {
+      _log.error('Purchase', 'Failed to add purchase for design ID $designId', e);
+      rethrow;
     }
-
-    // 3. Log Stock Transaction
-    await _client.from('stock_transactions').insert({
-      'shop_id':          shopId,
-      'design_id':        designId,
-      'location_id':      locationId,
-      'quantity':         quantity,
-      'transaction_type': 'purchase',
-      'reference_id':     purchaseId,
-    });
   }
 
   /// Saves multiple purchase lines sequentially to prevent race conditions
@@ -90,22 +99,31 @@ class PurchaseRepository {
     required String date,
     required List<PurchaseLine> lines,
   }) async {
-    for (final line in lines) {
-      await addPurchase(
-        shopId:     shopId,
-        date:       date,
-        partyId:    partyId,
-        designId:   line.designId,
-        quantity:   line.quantity,
-        locationId: line.locationId,
-      );
+    try {
+      for (final line in lines) {
+        await addPurchase(
+          shopId:     shopId,
+          date:       date,
+          partyId:    partyId,
+          designId:   line.designId,
+          quantity:   line.quantity,
+          locationId: line.locationId,
+        );
+      }
+      _log.success('Purchase', 'Bulk purchase completed: ${lines.length} lines saved');
+    } catch (e) {
+      _log.error('Purchase', 'Bulk purchase failed after saving some/none of ${lines.length} lines', e);
+      rethrow;
     }
   }
 }
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 final purchaseRepositoryProvider = Provider<PurchaseRepository>((ref) {
-  return PurchaseRepository(ref.watch(supabaseClientProvider));
+  return PurchaseRepository(
+    ref.watch(supabaseClientProvider),
+    ref.watch(logServiceProvider),
+  );
 });
 
 /// Recent purchases for the active shop (last 50)
@@ -113,16 +131,21 @@ final recentPurchasesProvider = FutureProvider<List<Map<String, dynamic>>>((ref)
   final activeShop = ref.watch(activeShopProvider);
   if (activeShop == null) return [];
 
-  final response = await ref.watch(supabaseClientProvider)
-      .from('purchase')
-      .select('''
-        id, date, quantity,
-        parties (partyname),
-        products_design (design_no)
-      ''')
-      .eq('shop_id', activeShop.id)
-      .order('id', ascending: false)
-      .limit(50);
+  try {
+    final response = await ref.watch(supabaseClientProvider)
+        .from('purchase')
+        .select('''
+          id, date, quantity,
+          parties (partyname),
+          products_design (design_no)
+        ''')
+        .eq('shop_id', activeShop.id)
+        .order('id', ascending: false)
+        .limit(50);
 
-  return List<Map<String, dynamic>>.from(response);
+    return List<Map<String, dynamic>>.from(response);
+  } catch (e) {
+    ref.read(logServiceProvider).error('Purchase', 'Error fetching recent purchases', e);
+    return [];
+  }
 });

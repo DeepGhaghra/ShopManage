@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/log_service.dart';
 import '../../services/core_providers.dart';
 import '../../models/shop.dart';
 import '../common/error_view.dart';
@@ -161,11 +162,13 @@ class _ShopManagementCard extends ConsumerWidget {
 
     if (result == true) {
       try {
+        final log = ref.read(logServiceProvider);
         await ref.read(shopRepositoryProvider).updateShop(shop.id, {
           'shop_name': nameController.text.trim(),
           'shop_print_name': printNameController.text.trim(),
           'shop_short_name': shortNameController.text.trim(),
         });
+        log.success('Admin', 'Shop details updated for "${nameController.text.trim()}"');
         ref.invalidate(shopsProvider);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -173,6 +176,7 @@ class _ShopManagementCard extends ConsumerWidget {
           );
         }
       } catch (e) {
+        ref.read(logServiceProvider).error('Admin', 'Failed to update shop details', e);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),

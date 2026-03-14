@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/log_service.dart';
 import '../../services/sales_providers.dart';
 import '../../services/party_providers.dart';
 import '../../services/product_providers.dart';
@@ -50,6 +51,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
         });
       });
     } catch (e) {
+      ref.read(logServiceProvider).error('Pricelist', 'Failed to fetch party pricelist', e);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${ErrorTranslator.translate(e)}')));
     } finally {
       if (mounted) setState(() => _isLoadingPrices = false);
@@ -71,6 +73,8 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
         price: price,
         shopId: activeShop.id,
       ));
+      
+      ref.read(logServiceProvider).success('Pricelist', 'Price updated for party "${_selectedParty!.partyName}" to ₹$price');
       
       setState(() {
         _partyPrices[productId] = price;
@@ -95,6 +99,7 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
         );
       }
     } catch (e) {
+      ref.read(logServiceProvider).error('Pricelist', 'Failed to update party price', e);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${ErrorTranslator.translate(e)}')));
     } finally {
       if (mounted) setState(() => _isSaving = false);

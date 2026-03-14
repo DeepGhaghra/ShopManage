@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/log_service.dart';
 import '../../services/product_providers.dart';
 import '../../services/core_providers.dart';
 import 'package:shopmanage/theme/app_theme.dart';
@@ -283,17 +284,20 @@ class _FolderManagementScreenState extends ConsumerState<FolderManagementScreen>
 
     if (result == true && controller.text.trim().isNotEmpty && (isEditing || selectedShopId != null)) {
       try {
+        final log = ref.read(logServiceProvider);
         if (isEditing) {
           await ref.read(productRepositoryProvider).updateFolder(
                 folder['id'],
                 controller.text.trim(),
                 folder['is_active'],
               );
+          log.success('Admin', 'Folder "${controller.text.trim()}" updated');
         } else {
           await ref.read(productRepositoryProvider).createFolder(
             controller.text.trim(),
             selectedShopId!,
           );
+          log.success('Admin', 'New folder "${controller.text.trim()}" created');
         }
         ref.invalidate(allFoldersProvider);
         if (context.mounted) {
@@ -302,6 +306,7 @@ class _FolderManagementScreenState extends ConsumerState<FolderManagementScreen>
           );
         }
       } catch (e) {
+        ref.read(logServiceProvider).error('Admin', 'Failed to ${isEditing ? 'update' : 'create'} folder', e);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
@@ -313,13 +318,16 @@ class _FolderManagementScreenState extends ConsumerState<FolderManagementScreen>
 
   Future<void> _toggleFolderStatus(BuildContext context, WidgetRef ref, Map<String, dynamic> folder, bool status) async {
     try {
+      final log = ref.read(logServiceProvider);
       await ref.read(productRepositoryProvider).updateFolder(
             folder['id'],
             folder['folder_name'],
             status,
           );
+      log.success('Admin', 'Folder "${folder['folder_name']}" ${status ? 'activated' : 'deactivated'}');
       ref.invalidate(allFoldersProvider);
     } catch (e) {
+      ref.read(logServiceProvider).error('Admin', 'Failed to toggle folder status', e);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),

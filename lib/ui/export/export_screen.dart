@@ -8,17 +8,17 @@ import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
 
 enum DateFilter {
-  today('Today'),
-  yesterday('Yesterday'),
-  last7Days('Last 7 Days'),
-  last15Days('Last 15 Days'),
-  currentMonth('This Month'),
-  lastMonth('Last Month'),
-  currentFY('Current F.Y.'),
-  custom('Custom Range');
+  today('Today', Icons.today_rounded),
+  yesterday('Yesterday', Icons.history_rounded),
+  last7Days('7 Days', Icons.date_range_rounded),
+  last15Days('15 Days', Icons.update_rounded),
+  currentMonth('This Month', Icons.calendar_month_rounded),
+  currentFY('Current F.Y.', Icons.account_balance_rounded),
+  custom('Custom', Icons.edit_calendar_rounded);
 
   final String label;
-  const DateFilter(this.label);
+  final IconData icon;
+  const DateFilter(this.label, this.icon);
 }
 
 class ExportScreen extends ConsumerStatefulWidget {
@@ -47,8 +47,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         return DateTime(now.year, now.month, now.day - 14);
       case DateFilter.currentMonth:
         return DateTime(now.year, now.month, 1);
-      case DateFilter.lastMonth:
-        return DateTime(now.year, now.month - 1, 1);
       case DateFilter.currentFY:
         final startYear = now.month < 4 ? now.year - 1 : now.year;
         return DateTime(startYear, 4, 1);
@@ -68,8 +66,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         return DateTime(now.year, now.month, now.day - 1, 23, 59, 59);
       case DateFilter.currentMonth:
         return DateTime(now.year, now.month + 1, 0, 23, 59, 59);
-      case DateFilter.lastMonth:
-        return DateTime(now.year, now.month, 0, 23, 59, 59);
       case DateFilter.currentFY:
         final startYear = now.month < 4 ? now.year - 1 : now.year;
         return DateTime(startYear + 1, 3, 31, 23, 59, 59);
@@ -157,43 +153,62 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
   Widget _buildFilterChips() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Wrap(
         spacing: 8,
-        runSpacing: 8,
+        runSpacing: 10,
         children: DateFilter.values.map((filter) {
           final isSelected = _selectedFilter == filter;
-          return ChoiceChip(
-            label: Text(
-              filter.label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.textSecondary,
-              ),
-            ),
-            selected: isSelected,
-            selectedColor: AppColors.primary,
-            backgroundColor: Colors.white,
-            elevation: isSelected ? 4 : 0,
-            pressElevation: 0,
-            shadowColor: AppColors.primary.withOpacity(0.4),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide(
-                color: isSelected ? AppColors.primary : Colors.grey.shade300,
-              ),
-            ),
-            onSelected: (selected) {
-              if (selected) {
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
                 if (filter == DateFilter.custom) {
                   _pickDateRange();
                 } else {
                   setState(() => _selectedFilter = filter);
                 }
-              }
-            },
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : Colors.grey.shade200,
+                    width: 1.2,
+                  ),
+                  boxShadow: isSelected ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    )
+                  ] : [],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      filter.icon, 
+                      size: 13, 
+                      color: isSelected ? Colors.white : AppColors.primary.withValues(alpha: 0.7)
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      filter.label,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           );
         }).toList(),
       ),
@@ -294,7 +309,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     bool showDateRangeInfo = true,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -321,30 +336,23 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [color.withOpacity(0.8), color],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: color.withOpacity(0.2),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(icon, color: Colors.white, size: 22),
+                        child: Icon(icon, color: Colors.white, size: 18),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -354,18 +362,20 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                             Text(
                               title,
                               style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 1),
                             Text(
                               description,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10,
                                 color: Colors.grey.shade600,
-                                height: 1.3,
+                                height: 1.2,
                               ),
                             ),
                           ],
@@ -373,28 +383,20 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
                   if (showDateRangeInfo) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.filter_alt_rounded, size: 12, color: Colors.grey.shade600),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Filtered by selected date range',
-                              style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-                            )
-                          ],
-                        ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Icon(Icons.filter_alt_rounded, size: 10, color: Colors.grey.shade500),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Date filtered',
+                            style: TextStyle(fontSize: 9, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+                          )
+                        ],
                       ),
-                      const SizedBox(height: 12),
                   ],
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
@@ -485,7 +487,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                     _buildFilterChips(),
                     const SizedBox(height: 16),
                     _buildDateDisplay(),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 30),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Text(
@@ -673,19 +675,19 @@ class _FancyButton extends StatelessWidget {
           splashColor: Colors.white.withOpacity(0.2),
           highlightColor: Colors.white.withOpacity(0.1),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: Colors.white, size: 16),
+                Icon(icon, color: Colors.white, size: 14),
                 const SizedBox(width: 6),
                 Text(
                   label,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    letterSpacing: 0.3,
+                    fontSize: 11.5,
+                    letterSpacing: 0.2,
                   ),
                 ),
               ],

@@ -12,6 +12,7 @@ import '../ui/pricelist/pricelist_screen.dart';
 import '../ui/common/log_viewer_screen.dart';
 import '../ui/export/export_screen.dart';
 import '../ui/admin/admin_dashboard.dart';
+import '../ui/parties/folder_distribution_screen.dart';
 import '../ui/admin/folder_management_screen.dart';
 import '../ui/admin/location_management_screen.dart';
 import '../ui/admin/product_head_management_screen.dart';
@@ -51,22 +52,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: '/sales',
-        builder: (context, state) => const SalesScreen(),
-      ),
-      GoRoute(
-        path: '/stock',
-        builder: (context, state) => const StockScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+      GoRoute(path: '/sales', builder: (context, state) => const SalesScreen()),
+      GoRoute(path: '/stock', builder: (context, state) => const StockScreen()),
       GoRoute(
         path: '/parties',
         builder: (context, state) => const PartiesScreen(),
@@ -82,6 +71,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/logs',
         builder: (context, state) => const LogViewerScreen(),
+      ),
+      GoRoute(
+        path: '/folder-distribution',
+        builder: (context, state) => const FolderDistributionScreen(),
       ),
       GoRoute(
         path: '/export',

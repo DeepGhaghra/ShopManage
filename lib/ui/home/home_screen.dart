@@ -28,7 +28,9 @@ class HomeScreen extends ConsumerWidget {
           content: const Text('👋 Signed out successfully. See you soon!'),
           backgroundColor: Colors.blueGrey.shade700,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       context.go('/login');
@@ -44,7 +46,8 @@ class HomeScreen extends ConsumerWidget {
     // redirect them to the Admin Console now that we know they are an Admin.
     if (isAdmin) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted && GoRouterState.of(context).uri.toString() == '/') {
+        if (context.mounted &&
+            GoRouterState.of(context).uri.toString() == '/') {
           context.go('/admin');
         }
       });
@@ -83,7 +86,10 @@ class HomeScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: IconButton(
-                icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
+                icon: const Icon(
+                  Icons.logout_rounded,
+                  color: AppColors.textSecondary,
+                ),
                 onPressed: () => _signOut(context),
                 tooltip: 'Sign Out',
               ),
@@ -103,9 +109,7 @@ class HomeScreen extends ConsumerWidget {
           title: 'Dashboard',
           subtitle: activeShop.shopName,
         ),
-        actions: const [
-          AppBarActions(),
-        ],
+        actions: const [AppBarActions()],
       ),
       drawer: const AppDrawer(currentRoute: '/'),
       body: RefreshIndicator(
@@ -117,173 +121,207 @@ class HomeScreen extends ConsumerWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1200),
                 child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Dashboard',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Dashboard',
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            DateTime.now().formatDateIST(),
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 24),
+                      Builder(
+                        builder: (context) {
+                          final isMobile =
+                              MediaQuery.of(context).size.width < 600;
+                          if (isMobile) {
+                            return Column(
+                              children: [
+                                _MetricCard(
+                                  title: 'Today Sales Qty',
+                                  value: '${metrics['todaySalesQty'] ?? 0}',
+                                  icon: Icons.analytics_rounded,
+                                  color: const Color(0xFF1976D2),
+                                  onTap: () => _showTodaySalesDetail(
+                                    context,
+                                    activeShop.id,
+                                  ),
+                                  isExpanded: false,
+                                  compact: true,
+                                ),
+                                const SizedBox(height: 12),
+                                _MetricCard(
+                                  title: 'Low Stock (Qty < 3)',
+                                  value: '${metrics['lowStockCount'] ?? 0}',
+                                  icon: Icons.notification_important_rounded,
+                                  color: const Color(0xFFD32F2F),
+                                  onTap: () => _showLowStockDetail(
+                                    context,
+                                    activeShop.id,
+                                  ),
+                                  isExpanded: false,
+                                  compact: true,
+                                ),
+                                const SizedBox(height: 12),
+                                _MetricCard(
+                                  title: 'Trending Qty (30d)',
+                                  value: '${metrics['trendingMaxQty'] ?? 0}',
+                                  icon: Icons.trending_up_rounded,
+                                  color: const Color(0xFF388E3C),
+                                  onTap: () => _showTrendingDetail(
+                                    context,
+                                    activeShop.id,
+                                  ),
+                                  isExpanded: false,
+                                  compact: true,
+                                ),
+                              ],
+                            );
+                          }
+                          return Row(
+                            children: [
+                              _MetricCard(
+                                title: 'Today Sales Qty',
+                                value: '${metrics['todaySalesQty'] ?? 0}',
+                                icon: Icons.analytics_rounded,
+                                color: const Color(0xFF1976D2),
+                                onTap: () => _showTodaySalesDetail(
+                                  context,
+                                  activeShop.id,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              _MetricCard(
+                                title: 'Low Stock (Qty < 3)',
+                                value: '${metrics['lowStockCount'] ?? 0}',
+                                icon: Icons.notification_important_rounded,
+                                color: const Color(0xFFD32F2F),
+                                onTap: () =>
+                                    _showLowStockDetail(context, activeShop.id),
+                              ),
+                              const SizedBox(width: 16),
+                              _MetricCard(
+                                title: 'Trending Qty (30d)',
+                                value: '${metrics['trendingMaxQty'] ?? 0}',
+                                icon: Icons.trending_up_rounded,
+                                color: const Color(0xFF388E3C),
+                                onTap: () =>
+                                    _showTrendingDetail(context, activeShop.id),
+                              ),
+                              const SizedBox(width: 16),
+                              _MetricCard(
+                                title: 'Folders Out',
+                                value: '${metrics['totalFoldersDist'] ?? 0}',
+                                icon: Icons.folder_shared_rounded,
+                                color: const Color(0xFFE91E63),
+                                onTap: () =>
+                                    context.push('/folder-distribution'),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 40),
                       Text(
-                        DateTime.now().formatDateIST(),
-                        style: const TextStyle(color: Colors.grey),
+                        'Quick Operations',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          int crossAxisCount;
+                          double childAspectRatio;
+
+                          if (constraints.maxWidth >= 1400) {
+                            crossAxisCount = 6;
+                            childAspectRatio = 1.1;
+                          } else if (constraints.maxWidth >= 1100) {
+                            crossAxisCount = 5;
+                            childAspectRatio = 1.1;
+                          } else if (constraints.maxWidth >= 800) {
+                            crossAxisCount = 4;
+                            childAspectRatio = 1.05;
+                          } else if (constraints.maxWidth >= 600) {
+                            crossAxisCount = 3;
+                            childAspectRatio = 1.05;
+                          } else {
+                            crossAxisCount = 2;
+                            childAspectRatio = 1.5;
+                          }
+
+                          return GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: childAspectRatio,
+                            children: [
+                              _ActionCard(
+                                label: 'Stock View',
+                                icon: Icons.inventory_2_rounded,
+                                baseColor: const Color(0xFFEF6C00),
+                                onTap: () => context.push('/stock'),
+                              ),
+                              _ActionCard(
+                                label: 'New Sales',
+                                icon: Icons.point_of_sale_rounded,
+                                baseColor: const Color(0xFF0F4C81),
+                                onTap: () => context.push('/sales'),
+                              ),
+                              _ActionCard(
+                                label: 'New Purchase',
+                                icon: Icons.add_shopping_cart_rounded,
+                                baseColor: const Color(0xFF2E7D32),
+                                onTap: () => context.push('/purchase'),
+                              ),
+
+                              _ActionCard(
+                                label: 'Price List',
+                                icon: Icons.request_quote_rounded,
+                                baseColor: const Color(0xFFD32F2F),
+                                onTap: () => context.push('/pricelist'),
+                              ),
+                              _ActionCard(
+                                label: 'Manage Parties',
+                                icon: Icons.group_add_rounded,
+                                baseColor: const Color(0xFF00838F),
+                                onTap: () => context.push('/parties'),
+                              ),
+                              _ActionCard(
+                                label: 'Export Data',
+                                icon: Icons.import_export_rounded,
+                                baseColor: const Color(0xFF6A1B9A),
+                                onTap: () => context.push('/export'),
+                              ),
+                              _ActionCard(
+                                label: 'Folders',
+                                icon: Icons.folder_shared_rounded,
+                                baseColor: const Color(0xFFE91E63),
+                                onTap: () =>
+                                    context.push('/folder-distribution'),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  Builder(builder: (context) {
-                    final isMobile = MediaQuery.of(context).size.width < 600;
-                    if (isMobile) {
-                      return Column(
-                        children: [
-                          _MetricCard(
-                            title: 'Today Sales Qty',
-                            value: '${metrics['todaySalesQty'] ?? 0}',
-                            icon: Icons.analytics_rounded,
-                            color: const Color(0xFF1976D2),
-                            onTap: () => _showTodaySalesDetail(context, activeShop.id),
-                            isExpanded: false,
-                            compact: true,
-                          ),
-                          const SizedBox(height: 12),
-                          _MetricCard(
-                            title: 'Low Stock (Qty < 3)',
-                            value: '${metrics['lowStockCount'] ?? 0}',
-                            icon: Icons.notification_important_rounded,
-                            color: const Color(0xFFD32F2F),
-                            onTap: () => _showLowStockDetail(context, activeShop.id),
-                            isExpanded: false,
-                            compact: true,
-                          ),
-                          const SizedBox(height: 12),
-                          _MetricCard(
-                            title: 'Trending Qty (30d)',
-                            value: '${metrics['trendingMaxQty'] ?? 0}',
-                            icon: Icons.trending_up_rounded,
-                            color: const Color(0xFF388E3C),
-                            onTap: () => _showTrendingDetail(context, activeShop.id),
-                            isExpanded: false,
-                            compact: true,
-                          ),
-                        ],
-                      );
-                    }
-                    return Row(
-                      children: [
-                        _MetricCard(
-                          title: 'Today Sales Qty',
-                          value: '${metrics['todaySalesQty'] ?? 0}',
-                          icon: Icons.analytics_rounded,
-                          color: const Color(0xFF1976D2),
-                          onTap: () => _showTodaySalesDetail(context, activeShop.id),
-                        ),
-                        const SizedBox(width: 16),
-                        _MetricCard(
-                          title: 'Low Stock (Qty < 3)',
-                          value: '${metrics['lowStockCount'] ?? 0}',
-                          icon: Icons.notification_important_rounded,
-                          color: const Color(0xFFD32F2F),
-                          onTap: () => _showLowStockDetail(context, activeShop.id),
-                        ),
-                        const SizedBox(width: 16),
-                        _MetricCard(
-                          title: 'Trending Qty (30d)',
-                          value: '${metrics['trendingMaxQty'] ?? 0}',
-                          icon: Icons.trending_up_rounded,
-                          color: const Color(0xFF388E3C),
-                          onTap: () => _showTrendingDetail(context, activeShop.id),
-                        ),
-                      ],
-                    );
-                  }),
-                  const SizedBox(height: 40),
-                  Text(
-                    'Quick Operations',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      int crossAxisCount;
-                      double childAspectRatio;
-                      
-                      if (constraints.maxWidth >= 1400) {
-                        crossAxisCount = 6;
-                        childAspectRatio = 1.1;
-                      } else if (constraints.maxWidth >= 1100) {
-                        crossAxisCount = 5;
-                        childAspectRatio = 1.1;
-                      } else if (constraints.maxWidth >= 800) {
-                        crossAxisCount = 4;
-                        childAspectRatio = 1.05;
-                      } else if (constraints.maxWidth >= 600) {
-                        crossAxisCount = 3;
-                        childAspectRatio = 1.05;
-                      } else {
-                        crossAxisCount = 2;
-                        childAspectRatio = 1.5; 
-                      }
-
-                      return GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: childAspectRatio,
-                        children: [_ActionCard(
-                            label: 'Stock View',
-                            icon: Icons.inventory_2_rounded,
-                            baseColor: const Color(0xFFEF6C00),
-                            onTap: () => context.push('/stock'),
-                          ),
-                          _ActionCard(
-                            label: 'New Sales',
-                            icon: Icons.point_of_sale_rounded,
-                            baseColor: const Color(0xFF0F4C81),
-                            onTap: () => context.push('/sales'),
-                          ),
-                          _ActionCard(
-                            label: 'New Purchase',
-                            icon: Icons.add_shopping_cart_rounded,
-                            baseColor: const Color(0xFF2E7D32),
-                            onTap: () => context.push('/purchase'),
-                          ),
-                          
-                        
-                          _ActionCard(
-                            label: 'Price List',
-                            icon: Icons.request_quote_rounded,
-                            baseColor: const Color(0xFFD32F2F),
-                            onTap: () => context.push('/pricelist'),
-                          ),
-                          _ActionCard(
-                            label: 'Manage Parties',
-                            icon: Icons.group_add_rounded,
-                            baseColor: const Color(0xFF00838F),
-                            onTap: () => context.push('/parties'),
-                          ),  _ActionCard(
-                            label: 'Export Data',
-                            icon: Icons.import_export_rounded,
-                            baseColor: const Color(0xFF6A1B9A),
-                            onTap: () => context.push('/export'),
-                          ),
-                          _ActionCard(
-                            label: 'Folders',
-                            icon: Icons.folder_shared_rounded,
-                            baseColor: const Color(0xFFE91E63),
-                            onTap: () => context.push('/folder-distribution'),
-                          ),
-                        ],
-                      );
-                    }
-                  ),
-                ],
+                ),
               ),
             );
           },
@@ -337,7 +375,6 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-
 class _MetricCard extends StatelessWidget {
   final String title;
   final String value;
@@ -384,8 +421,11 @@ class _MetricCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             splashColor: Colors.white.withValues(alpha: 0.1),
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: compact ? 16 : 20),
-              child: compact 
+              padding: EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: compact ? 16 : 20,
+              ),
+              child: compact
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -395,18 +435,29 @@ class _MetricCard extends StatelessWidget {
                           children: [
                             Text(
                               value,
-                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               title,
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
                         Container(
                           padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
                           child: Icon(icon, color: Colors.white, size: 28),
                         ),
                       ],
@@ -522,7 +573,9 @@ class _ActionCard extends StatelessWidget {
                       width: 4,
                       decoration: BoxDecoration(
                         color: baseColor,
-                        borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
+                        borderRadius: const BorderRadius.horizontal(
+                          right: Radius.circular(4),
+                        ),
                       ),
                     ),
                   ),
@@ -607,8 +660,18 @@ class _DetailViewSheet extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
-                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
                   ],
                 ),
               ),
@@ -618,7 +681,10 @@ class _DetailViewSheet extends ConsumerWidget {
                   data: (data) {
                     if (data.isEmpty) {
                       return const Center(
-                        child: Text('No records found.', style: TextStyle(color: AppColors.textSecondary)),
+                        child: Text(
+                          'No records found.',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
                       );
                     }
                     return ListView.separated(
@@ -626,11 +692,14 @@ class _DetailViewSheet extends ConsumerWidget {
                       padding: const EdgeInsets.all(16),
                       itemCount: data.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) => _buildListItem(data[index]),
+                      itemBuilder: (context, index) =>
+                          _buildListItem(data[index]),
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text(ErrorTranslator.translate(e))),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) =>
+                      Center(child: Text(ErrorTranslator.translate(e))),
                 ),
               ),
             ],
@@ -650,9 +719,19 @@ class _DetailViewSheet extends ConsumerWidget {
         color: AppColors.scaffoldBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ListTile(
-          title: Text('Design: $designNo', style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(
+            'Design: $designNo',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           subtitle: Text('Party: $partyName @ $date'),
-          trailing: Text('${item['quantity']} Qty', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue)),
+          trailing: Text(
+            '${item['quantity']} Qty',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue,
+            ),
+          ),
         ),
       );
     } else if (type == 'low_stock') {
@@ -663,9 +742,19 @@ class _DetailViewSheet extends ConsumerWidget {
         color: Colors.red.shade50,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ListTile(
-          title: Text('Design: $designNo', style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(
+            'Design: $designNo',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           subtitle: Text('Location: $location'),
-          trailing: Text('${item['quantity']} Qty', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
+          trailing: Text(
+            '${item['quantity']} Qty',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
         ),
       );
     } else {
@@ -677,15 +766,25 @@ class _DetailViewSheet extends ConsumerWidget {
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: Colors.green,
-            child: Text('${item['quantity']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(
+              '${item['quantity']}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-          title: Text('Design: ${item['design_no']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(
+            'Design: ${item['design_no']}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           subtitle: const Text('Top Seller'),
         ),
       );
     }
   }
 }
+
 class _ShopSelectionView extends ConsumerStatefulWidget {
   const _ShopSelectionView();
 
@@ -723,11 +822,22 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.store_mall_directory_outlined, size: 80, color: AppColors.textHint),
+                        const Icon(
+                          Icons.store_mall_directory_outlined,
+                          size: 80,
+                          color: AppColors.textHint,
+                        ),
                         const SizedBox(height: 16),
-                        Text('No shops available', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.textSecondary)),
+                        Text(
+                          'No shops available',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(color: AppColors.textSecondary),
+                        ),
                         const SizedBox(height: 8),
-                        const Text('Please contact your administrator to assign shops.', textAlign: TextAlign.center),
+                        const Text(
+                          'Please contact your administrator to assign shops.',
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 24),
                         ElevatedButton.icon(
                           onPressed: () => ref.invalidate(shopsProvider),
@@ -736,8 +846,13 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ],
@@ -750,22 +865,27 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
 
           // Auto-select if ONLY ONE shop exists
           if (allShops.length == 1) {
-             WidgetsBinding.instance.addPostFrameCallback((_) {
-               if (ref.read(activeShopProvider) == null) {
-                 ref.read(activeShopProvider.notifier).setShop(allShops.first);
-               }
-             });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (ref.read(activeShopProvider) == null) {
+                ref.read(activeShopProvider.notifier).setShop(allShops.first);
+              }
+            });
           }
 
           return LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth > 800;
               final crossAxisCount = isWide ? 2 : 1;
-              final horizontalPadding = isWide ? constraints.maxWidth * 0.15 : 24.0;
+              final horizontalPadding = isWide
+                  ? constraints.maxWidth * 0.15
+                  : 24.0;
 
               return SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 40),
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 40,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -823,21 +943,27 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                           child: RepaintBoundary(
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              transform: isHovered ? (Matrix4.identity()..scale(1.015, 1.015)) : Matrix4.identity(),
+                              transform: isHovered
+                                  ? (Matrix4.identity()..scale(1.015, 1.015))
+                                  : Matrix4.identity(),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: isHovered 
-                                        ? color.withOpacity(0.12) 
+                                    color: isHovered
+                                        ? color.withOpacity(0.12)
                                         : Colors.black.withOpacity(0.03),
                                     blurRadius: isHovered ? 16 : 8,
-                                    offset: isHovered ? const Offset(0, 6) : const Offset(0, 3),
+                                    offset: isHovered
+                                        ? const Offset(0, 6)
+                                        : const Offset(0, 3),
                                   ),
                                 ],
                                 border: Border.all(
-                                  color: isHovered ? color.withOpacity(0.25) : Colors.transparent,
+                                  color: isHovered
+                                      ? color.withOpacity(0.25)
+                                      : Colors.transparent,
                                   width: 2,
                                 ),
                               ),
@@ -846,7 +972,9 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                                 borderRadius: BorderRadius.circular(20),
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(20),
-                                  onTap: () => ref.read(activeShopProvider.notifier).setShop(shop),
+                                  onTap: () => ref
+                                      .read(activeShopProvider.notifier)
+                                      .setShop(shop),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Row(
@@ -856,11 +984,16 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                                           height: 64,
                                           decoration: BoxDecoration(
                                             gradient: LinearGradient(
-                                              colors: [color.withValues(alpha: 0.8), color],
+                                              colors: [
+                                                color.withValues(alpha: 0.8),
+                                                color,
+                                              ],
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                             ),
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
                                             boxShadow: [
                                               BoxShadow(
                                                 color: color.withOpacity(0.2),
@@ -869,13 +1002,19 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                                               ),
                                             ],
                                           ),
-                                          child: Icon(icon, color: Colors.white, size: 32),
+                                          child: Icon(
+                                            icon,
+                                            color: Colors.white,
+                                            size: 32,
+                                          ),
                                         ),
                                         const SizedBox(width: 20),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               Text(
                                                 shop.shopName,
@@ -893,7 +1032,8 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
-                                                  color: AppColors.textSecondary.withValues(alpha: 0.6),
+                                                  color: AppColors.textSecondary
+                                                      .withValues(alpha: 0.6),
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                 ),
@@ -903,7 +1043,11 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                                         ),
                                         Icon(
                                           Icons.arrow_forward_rounded,
-                                          color: isHovered ? color : AppColors.divider.withValues(alpha: 0.6),
+                                          color: isHovered
+                                              ? color
+                                              : AppColors.divider.withValues(
+                                                  alpha: 0.6,
+                                                ),
                                         ),
                                       ],
                                     ),
@@ -917,18 +1061,23 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
                     ),
                   ],
                 ),
-              ),
-            );
-          },
+              );
+            },
           );
         },
         loading: () => const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
+              CircularProgressIndicator(
+                strokeWidth: 3,
+                color: AppColors.primary,
+              ),
               SizedBox(height: 24),
-              Text('Syncing your workspaces...', style: TextStyle(color: AppColors.textSecondary)),
+              Text(
+                'Syncing your workspaces...',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ],
           ),
         ),
@@ -946,7 +1095,11 @@ class _ShopSelectionViewState extends ConsumerState<_ShopSelectionView> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
-                Text('Error: $err', textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                Text(
+                  'Error: $err',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
               ],
             ),
           ),

@@ -120,6 +120,25 @@ CREATE TABLE public.purchases (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE public.party_folders (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  party_id INTEGER NOT NULL REFERENCES public.parties(id) ON DELETE CASCADE,
+  folder_id INTEGER NOT NULL REFERENCES public.folders(id) ON DELETE CASCADE,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  time_added TIMESTAMPTZ NOT NULL DEFAULT now(),
+  shop_id INTEGER NOT NULL REFERENCES public.shop(id) ON DELETE CASCADE
+);
+
+CREATE TABLE public.party_folder_transactions (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  shop_id INTEGER NOT NULL REFERENCES public.shop(id) ON DELETE CASCADE,
+  party_id INTEGER NOT NULL REFERENCES public.parties(id) ON DELETE CASCADE,
+  folder_id INTEGER NOT NULL REFERENCES public.folders(id) ON DELETE CASCADE,
+  transaction_type TEXT NOT NULL CHECK (transaction_type IN ('GIVE', 'RETURN')),
+  quantity INTEGER NOT NULL DEFAULT 1,
+  time_added TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- 3. Enable RLS
 ALTER TABLE public.shops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
@@ -133,3 +152,5 @@ ALTER TABLE public.stock_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.purchases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.party_folders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.party_folder_transactions ENABLE ROW LEVEL SECURITY;

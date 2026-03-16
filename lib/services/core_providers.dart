@@ -75,6 +75,21 @@ class ShopRepository {
   Future<void> updateShop(int id, Map<String, dynamic> data) async {
     await _client.from('shop').update(data).eq('id', id);
   }
+
+  // Check if location has active stock
+  Future<bool> hasStock(int locationId) async {
+    final response = await _client
+        .from('stock')
+        .select('id')
+        .eq('location_id', locationId)
+        .gt('quantity', 0)
+        .limit(1);
+    return (response as List).isNotEmpty;
+  }
+
+  Future<void> deleteLocation(int id) async {
+    await _client.from('locations').delete().eq('id', id);
+  }
 }
 
 final shopRepositoryProvider = Provider<ShopRepository>((ref) {

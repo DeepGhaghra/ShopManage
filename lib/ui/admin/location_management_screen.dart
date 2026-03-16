@@ -112,16 +112,32 @@ class _LocationManagementScreenState extends ConsumerState<LocationManagementScr
                         ],
                       ),
                     ),
-                    trailing: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _showLocationDialog(context, ref, shopsAsync, location: loc),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Icon(Icons.edit_note_rounded, color: AppColors.textSecondary.withOpacity(0.6), size: 24),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _showLocationDialog(context, ref, shopsAsync, location: loc),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Icon(Icons.edit_note_rounded, color: AppColors.textSecondary.withOpacity(0.6), size: 24),
+                            ),
+                          ),
                         ),
-                      ),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _handleDeleteLocation(context, ref, loc),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Icon(Icons.delete_outline_rounded, color: AppColors.error.withOpacity(0.7), size: 22),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -279,6 +295,81 @@ class _LocationManagementScreenState extends ConsumerState<LocationManagementScr
             SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
           );
         }
+      }
+    }
+  }
+
+  Future<void> _handleDeleteLocation(BuildContext context, WidgetRef ref, Map<String, dynamic> location) async {
+    final log = ref.read(logServiceProvider);
+    final repo = ref.read(shopRepositoryProvider);
+    final String locationName = location['name'];
+    final int locationId = location['id'];
+
+    // 1. Confirmation
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Location', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: Text('Are you sure you want to delete "$locationName"? This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), 
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // 2. Check for active stock
+      final bool stockExists = await repo.hasStock(locationId);
+      
+      if (stockExists) {
+        // Blocked attempt
+        log.warning('Admin', 'Location deletion blocked: "$locationName" (ID: $locationId) still has active stock associated with it.');
+        
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  SizedBox(width: 8),
+                  Text('Cannot Delete', style: TextStyle(fontWeight: FontWeight.w800)),
+                ],
+              ),
+              content: Text('The location "$locationName" cannot be deleted because it still has active stock. Please move or clear the stock first.'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      // 3. Execution
+      await repo.deleteLocation(locationId);
+      log.success('Admin', 'Location "$locationName" (ID: $locationId) successfully deleted by administrator.');
+      
+      ref.invalidate(allLocationsProvider);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Location "$locationName" deleted successfully')),
+        );
+      }
+    } catch (e) {
+      log.error('Admin', 'Failed to delete location "$locationName"', e);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting location: $e'), backgroundColor: AppColors.error),
+        );
       }
     }
   }

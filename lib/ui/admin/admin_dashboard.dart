@@ -7,14 +7,6 @@ import '../common/app_drawer.dart';
 import 'admin_scaffold.dart';
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../../services/core_providers.dart';
-import 'package:shopmanage/theme/app_theme.dart';
-import '../common/app_drawer.dart';
-import 'admin_scaffold.dart';
-
 class AdminDashboard extends ConsumerWidget {
   const AdminDashboard({super.key});
 
@@ -52,7 +44,7 @@ class AdminDashboard extends ConsumerWidget {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1200),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+                    padding: const EdgeInsets.fromLTRB(32, 20, 32, 40),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -86,7 +78,7 @@ class AdminDashboard extends ConsumerWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1200),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 32, vertical: isMobile ? 24 : 48),
+                padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 32, vertical: isMobile ? 16 : 32),
                 child: Row(
                   children: [
                     Container(
@@ -174,10 +166,6 @@ class AdminDashboard extends ConsumerWidget {
         // prevent cards from becoming incredibly thin or wide
         cardWidth = cardWidth.clamp(140.0, availableWidth);
 
-        // Responsive internal sizes
-        final iconSize = isMobile ? 24.0 : 32.0;
-        final titleSize = isMobile ? 16.0 : 20.0;
-        final padding = isMobile ? 20.0 : 28.0;
 
         return Wrap(
           spacing: spacing,
@@ -190,9 +178,6 @@ class AdminDashboard extends ConsumerWidget {
               color: const Color(0xFF6366F1), // Indigo
               targetRoute: '/admin/folders',
               width: cardWidth,
-              iconSize: iconSize,
-              titleSize: titleSize,
-              padding: padding,
             ),
             _ModernDashCard(
               title: 'Products',
@@ -201,9 +186,6 @@ class AdminDashboard extends ConsumerWidget {
               color: const Color(0xFF10B981), // Emerald
               targetRoute: '/admin/products',
               width: cardWidth,
-              iconSize: iconSize,
-              titleSize: titleSize,
-              padding: padding,
             ),
             _ModernDashCard(
               title: 'Locations',
@@ -212,9 +194,6 @@ class AdminDashboard extends ConsumerWidget {
               color: const Color(0xFFF43F5E), // Rose
               targetRoute: '/admin/locations',
               width: cardWidth,
-              iconSize: iconSize,
-              titleSize: titleSize,
-              padding: padding,
             ),
             _ModernDashCard(
               title: 'Shops',
@@ -223,9 +202,6 @@ class AdminDashboard extends ConsumerWidget {
               color: const Color(0xFFF59E0B), // Amber
               targetRoute: '/admin/shops',
               width: cardWidth,
-              iconSize: iconSize,
-              titleSize: titleSize,
-              padding: padding,
             ),
           ],
         );
@@ -241,9 +217,6 @@ class _ModernDashCard extends StatefulWidget {
   final Color color;
   final String targetRoute;
   final double width;
-  final double iconSize;
-  final double titleSize;
-  final double padding;
 
   const _ModernDashCard({
     required this.title,
@@ -252,9 +225,6 @@ class _ModernDashCard extends StatefulWidget {
     required this.color,
     required this.targetRoute,
     required this.width,
-    required this.iconSize,
-    required this.titleSize,
-    required this.padding,
   });
 
   @override
@@ -298,27 +268,39 @@ class _ModernDashCardState extends State<_ModernDashCard> {
             ],
           ),
           child: Padding(
-            padding: EdgeInsets.all(widget.padding),
+            padding: const EdgeInsets.all(16), // Tighter padding for space saving
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      padding: EdgeInsets.all(widget.iconSize * 0.5), // Scale inner padding to match icon
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: widget.color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(widget.icon, color: widget.color, size: widget.iconSize),
+                      child: Icon(widget.icon, color: widget.color, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        style: const TextStyle(
+                          color: Color(0xFF111827),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     AnimatedOpacity(
                       duration: const Duration(milliseconds: 200),
                       opacity: _isHovered ? 1.0 : 0.0,
                       child: Container(
-                        padding: EdgeInsets.all(widget.iconSize * 0.25),
+                        padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
                           color: Color(0xFFF9FAFB),
                           shape: BoxShape.circle,
@@ -326,29 +308,19 @@ class _ModernDashCardState extends State<_ModernDashCard> {
                         child: Icon(
                           Icons.arrow_forward_rounded, 
                           color: widget.color, 
-                          size: widget.iconSize * 0.55
+                          size: 14
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: widget.padding * 0.8),
-                Text(
-                  widget.title,
-                  style: TextStyle(
-                    color: const Color(0xFF111827),
-                    fontSize: widget.titleSize,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   widget.description,
                   style: const TextStyle(
                     color: Color(0xFF6B7280),
-                    fontSize: 14,
-                    height: 1.5,
+                    fontSize: 13,
+                    height: 1.4,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 2,

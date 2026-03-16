@@ -42,7 +42,7 @@ class AdminScaffold extends ConsumerWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         bottom: bottom,
-        leading: drawer != null 
+        leading: drawer != null
             ? Builder(
                 builder: (context) => IconButton(
                   icon: const Icon(Icons.menu_rounded, color: Colors.white),
@@ -54,25 +54,33 @@ class AdminScaffold extends ConsumerWidget {
         titleSpacing: 0,
         title: shopsAsync.when(
           data: (shops) {
-            final currentShop = shops.where((s) => s.id == selectedShopId).firstOrNull;
-            final subtitle = currentShop?.shopName ?? (isAdmin && selectedShopId == null ? 'All Shops' : '');
-            
+            final currentShop = shops
+                .where((s) => s.id == selectedShopId)
+                .firstOrNull;
+            final subtitle =
+                currentShop?.shopName ??
+                (isAdmin && selectedShopId == null ? 'All Shops' : '');
+
             return InkWell(
-              onTap: onShopChanged == null ? null : () {
-                final shopMap = [
-                  if (isAdmin) {'id': null, 'shop_name': 'All Shops'},
-                  ...shops.map((s) => {'id': s.id, 'shop_name': s.shopName}),
-                ];
-                SearchableSelector.show(
-                  context: context,
-                  title: 'Switch Shop',
-                  items: shopMap,
-                  labelKey: 'shop_name',
-                  icon: Icons.storefront_rounded,
-                  iconColor: AppColors.primary,
-                  onSelected: (id) => onShopChanged!(id), 
-                );
-              },
+              onTap: onShopChanged == null
+                  ? null
+                  : () {
+                      final shopMap = [
+                        if (isAdmin) {'id': null, 'shop_name': 'All Shops'},
+                        ...shops.map(
+                          (s) => {'id': s.id, 'shop_name': s.shopName},
+                        ),
+                      ];
+                      SearchableSelector.show(
+                        context: context,
+                        title: 'Switch Shop',
+                        items: shopMap,
+                        labelKey: 'shop_name',
+                        icon: Icons.storefront_rounded,
+                        iconColor: AppColors.primary,
+                        onSelected: (id) => onShopChanged!(id),
+                      );
+                    },
               borderRadius: BorderRadius.circular(8),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -82,57 +90,83 @@ class AdminScaffold extends ConsumerWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        color: Colors.white, 
-                        fontWeight: FontWeight.w900, 
-                        fontSize: 16, 
-                        letterSpacing: -0.2
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        letterSpacing: -0.2,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (subtitle.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.storefront_rounded, 
-                            color: Colors.white.withOpacity(0.7), 
-                            size: 10
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryDim.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.accent.withOpacity(0.3),
+                            width: 0.5,
                           ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              subtitle.toUpperCase(),
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8), 
-                                fontSize: 9, 
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.storefront_rounded,
+                              color: Colors.white,
+                              size: 11,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                subtitle.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.0,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          if (onShopChanged != null) ...[
-                            const SizedBox(width: 2),
-                            Icon(
-                              Icons.keyboard_arrow_down_rounded, 
-                              color: Colors.white.withOpacity(0.5), 
-                              size: 12
-                            ),
+                            if (onShopChanged != null) ...[
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 14,
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
+                    ],
                   ],
                 ),
               ),
             );
           },
-          loading: () => Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
-          error: (_, __) => Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+          loading: () => Text(
+            title,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          error: (_, __) => Text(
+            title,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
         ),
         actions: [
           if (actions != null) ...actions!,
           IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white70, size: 20),
+            icon: const Icon(
+              Icons.logout_rounded,
+              color: Colors.white70,
+              size: 20,
+            ),
             tooltip: 'Sign Out',
             onPressed: () async {
               final confirmed = await ConfirmationDialog.showSignOut(context);
@@ -148,7 +182,9 @@ class AdminScaffold extends ConsumerWidget {
       drawer: drawer,
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000), // Reduced from 1200
+          constraints: const BoxConstraints(
+            maxWidth: 1000,
+          ), // Reduced from 1200
           child: body,
         ),
       ),
@@ -156,4 +192,3 @@ class AdminScaffold extends ConsumerWidget {
     );
   }
 }
-

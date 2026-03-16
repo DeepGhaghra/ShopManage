@@ -56,8 +56,8 @@ class LogRepository {
 
   Future<void> clearRemoteLogs() async {
     try {
-      // Use .neq('id', -1) which matches all entries (IDs are usually positive)
-      await _client.from('activity_logs').delete().neq('id', -1);
+      // Use .gt('id', -1) which matches all entries (IDs are serial positive numbers)
+      await _client.from('activity_logs').delete().gt('id', -1);
     } catch (e) {
       if (kDebugMode) {
         print('Failed to clear remote logs: $e');

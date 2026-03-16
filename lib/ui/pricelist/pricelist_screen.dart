@@ -6,7 +6,6 @@ import '../../services/party_providers.dart';
 import '../../services/product_providers.dart';
 import '../../services/core_providers.dart';
 import '../../models/party.dart';
-import '../../models/product_head.dart';
 import '../../models/pricelist.dart';
 import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
@@ -147,6 +146,18 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
   Widget build(BuildContext context) {
     final partiesAsync = ref.watch(partiesProvider);
     final productsAsync = ref.watch(productHeadsProvider);
+
+    // Reset state when shop changes
+    ref.listen(activeShopProvider, (previous, next) {
+      if (previous?.id != next?.id) {
+        setState(() {
+          _selectedParty = null;
+          _partyPrices = {};
+          _priceControllers.forEach((_, c) => c.dispose());
+          _priceControllers.clear();
+        });
+      }
+    });
 
     return AdminScaffold(
       backgroundColor: AppColors.scaffoldBg,

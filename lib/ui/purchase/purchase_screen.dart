@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' as xl;
-import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import '../../services/purchase_providers.dart';
 import '../../services/party_providers.dart';
@@ -19,7 +17,6 @@ import '../common/app_drawer.dart';
 import '../admin/admin_scaffold.dart';
 import '../common/confirmation_dialog.dart';
 import '../../utils/error_translator.dart';
-import '../../utils/date_utils.dart';
 
 // ─── Local line model for Manual Entry tab ─────────────────────────────────────
 class _ManualLine {
@@ -333,6 +330,20 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     final partiesAsync   = ref.watch(partiesProvider);
     final designsAsync   = ref.watch(sortedDesignsProvider);
     final locationsAsync = ref.watch(locationsProvider);
+
+    // Reset local state when shop changes
+    ref.listen(activeShopProvider, (previous, next) {
+      if (previous?.id != next?.id) {
+        setState(() {
+          _selectedParty = null;
+          _manualLines.clear();
+          _manualLines.add(_ManualLine());
+          _bulkRows = [];
+          _uploadedFileName = null;
+          _formResetKey++;
+        });
+      }
+    });
 
     return AdminScaffold(
       title: 'Purchase Entry',

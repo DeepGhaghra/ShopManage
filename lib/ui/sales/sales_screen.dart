@@ -494,6 +494,24 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     final partiesAsync     = ref.watch(partiesProvider);
     final stockAsync       = ref.watch(shopStockProvider);
 
+    // Listen for shop changes to reset the form and fetch new invoice number
+    ref.listen(activeShopProvider, (previous, next) {
+      if (previous?.id != next?.id) {
+        setState(() {
+          _editingInvoiceNo = null;
+          _selectedParty = null;
+          _partySearchController.clear();
+          for (var l in _lines) {
+            l.dispose();
+          }
+          _lines.clear();
+          _lines.add(_SaleItemLine());
+          _formResetKey++;
+        });
+        _fetchNextInvoiceNo();
+      }
+    });
+
     // ── Optimized: Pre-calculate set of used design_location pairs ──
     // ── Optimized MERGE logic: Calculated only when base data changes ──
     final List<Map<String, dynamic>> availableStock = useMemoized(() {

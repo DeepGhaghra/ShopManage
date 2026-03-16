@@ -47,10 +47,7 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
   }
 
   List<LogEntry> _getFilteredLogs(LogService logService) {
-    List<LogEntry> logs = logService.logs
-        .toList()
-        .reversed
-        .toList(); // newest first
+    List<LogEntry> logs = logService.logs.toList(); // newest first
 
     if (_filterLevel != null) {
       logs = logs.where((l) => l.level == _filterLevel).toList();
@@ -178,41 +175,9 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
                   ),
                 );
               } else if (val == 'clear') {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    title: const Text(
-                      'Clear All Logs?',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    content: const Text(
-                      'This will remove all in-memory logs. File logs will remain on disk.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          logService.clearLogs();
-                          Navigator.pop(ctx);
-                          setState(() {});
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                        ),
-                        child: const Text(
-                          'Clear',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+                _showClearDialog(context, logService, false);
+              } else if (val == 'wipe') {
+                _showClearDialog(context, logService, true);
               }
             },
             itemBuilder: (_) {
@@ -227,17 +192,28 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
                     ],
                   ),
                 ),
-                if (isAdmin)
+                if (isAdmin) ...[
                   const PopupMenuItem(
                     value: 'clear',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                        Icon(Icons.cleaning_services_rounded, size: 18, color: Colors.blue),
                         SizedBox(width: 8),
-                        Text('Clear Logs', style: TextStyle(color: Colors.red)),
+                        Text('Clear Local', style: TextStyle(color: Colors.blue)),
                       ],
                     ),
                   ),
+                  const PopupMenuItem(
+                    value: 'wipe',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_forever_rounded, size: 18, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Wipe Remote', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
               ];
             },
           ),
@@ -487,6 +463,61 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showClearDialog(BuildContext context, LogService logService, bool isRemote) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          isRemote ? 'Wipe Remote Logs?' : 'Clear Local Logs?',
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          isRemote
+              ? 'This will delete ALL logs from the central server. Other users will no longer see these logs. This action IS PERMANENT.'
+              : 'This will remove logs from this device\'s session. They will reappear if you sync from remote.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                if (isRemote) {
+                  await logService.wipeRemoteLogs();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Remote logs wiped successfully')),
+                    );
+                  }
+                } else {
+                  logService.clearLogs();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Local logs cleared')),
+                    );
+                  }
+                }
+                if (mounted) setState(() {});
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isRemote ? Colors.red : Colors.blue,
+              elevation: 0,
+            ),
+            child: Text(isRemote ? 'Wipe All' : 'Clear Local', style: const TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }

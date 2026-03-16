@@ -515,6 +515,8 @@ class _FolderDistributionScreenState
               folderId: dist.folderId,
               currentQuantity: dist.quantity,
               requestedQuantity: qty,
+              partyName: dist.partyName,
+              folderName: dist.folderName,
             );
         ref.invalidate(folderDistributionsProvider);
         // Refresh both specific and general history for this party

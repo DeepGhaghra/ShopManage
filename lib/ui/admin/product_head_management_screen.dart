@@ -86,6 +86,8 @@ class _ProductHeadManagementScreenState
             applyToParties: _applyToPartiesGlobally,
           );
 
+      ref.read(logServiceProvider).success('Admin', 'Bulk rate adjustment completed for ${validAdjustments.length} products');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -821,6 +823,10 @@ class _ProductHeadManagementScreenState
                 shopId: selectedShopId!,
               );
         }
+        ref.read(logServiceProvider).success(
+              'Admin',
+              'Product "${nameController.text.trim()}" ${isEditing ? 'updated' : 'created'}',
+            );
         ref.invalidate(allProductHeadsProvider);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

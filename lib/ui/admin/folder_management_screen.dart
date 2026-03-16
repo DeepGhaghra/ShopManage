@@ -291,7 +291,13 @@ class _FolderManagementScreenState extends ConsumerState<FolderManagementScreen>
                 controller.text.trim(),
                 folder['is_active'],
               );
-          log.success('Admin', 'Folder "${controller.text.trim()}" updated');
+          final oldName = folder['folder_name'];
+          final newName = controller.text.trim();
+          if (oldName != newName) {
+            log.success('Admin', 'Folder name changed: "$oldName" → "$newName"');
+          } else {
+            log.success('Admin', 'Folder "$newName" settings updated');
+          }
         } else {
           await ref.read(productRepositoryProvider).createFolder(
             controller.text.trim(),

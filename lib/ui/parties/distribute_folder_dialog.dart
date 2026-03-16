@@ -322,6 +322,8 @@ class _DistributeFolderDialogState
             folderId: folderId,
             currentQuantity: currentQtyForThisFolder,
             requestedQuantity: _quantity,
+            partyName: widget.initialDistribution?.partyName ?? _selectedParty?.partyName,
+            folderName: widget.initialDistribution?.folderName ?? _selectedFolder?.folderName,
           );
 
       ref.invalidate(folderDistributionsProvider);

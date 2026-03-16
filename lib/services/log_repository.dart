@@ -36,7 +36,8 @@ class LogRepository {
           .limit(limit);
       
       return response.map((json) {
-        final entry = LogEntry(
+        return LogEntry(
+          id: json['id'] as int?,
           level: LogLevel.values.firstWhere(
             (e) => e.name == json['level'],
             orElse: () => LogLevel.info,
@@ -44,16 +45,24 @@ class LogRepository {
           module: json['module'] ?? 'Unknown',
           message: json['message'] ?? '',
           details: json['details'],
-        );
-        // Overwrite timestamp with the one from DB
-        return entry.withIdAndTimestamp(
-          json['id'],
-          DateTime.parse(json['timestamp']),
-          json['user_email'],
+          userEmail: json['user_email'],
+          timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp'] as String) : null,
         );
       }).toList();
     } catch (e) {
       return [];
+    }
+  }
+
+  Future<void> clearRemoteLogs() async {
+    try {
+      // Use .neq('id', -1) which matches all entries (IDs are usually positive)
+      await _client.from('activity_logs').delete().neq('id', -1);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to clear remote logs: $e');
+      }
+      rethrow;
     }
   }
 }

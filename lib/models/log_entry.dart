@@ -19,7 +19,7 @@ class LogEntry {
     this.id,
     this.userEmail,
     DateTime? timestamp,
-  }) : timestamp = timestamp ?? DateTime.now().toIST();
+  }) : timestamp = (timestamp ?? DateTime.now()).toUtc();
 
   Map<String, dynamic> toJson() => {
     'timestamp': timestamp.toIso8601String(),
@@ -42,7 +42,7 @@ class LogEntry {
       details: json['details']?.toString(),
       id: json['id'] as int?,
       userEmail: json['user_email'] as String?,
-      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp'] as String).toIST() : null,
+      timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp'] as String).toUtc() : null,
     );
   }
 

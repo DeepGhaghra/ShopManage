@@ -69,6 +69,8 @@ class FolderDistributionRepository {
     required int folderId,
     required int currentQuantity,
     int requestedQuantity = 1,
+    String? partyName,
+    String? folderName,
   }) async {
     try {
       // Fetch current state for business logic (tallying), but remove the hard limit check
@@ -111,9 +113,11 @@ class FolderDistributionRepository {
         'quantity': requestedQuantity,
       });
 
+      final displayName = partyName ?? 'ID $partyId';
+      final itemDesc = folderName ?? 'folder(s)';
       _log.success(
         'FolderDist',
-        'Added $requestedQuantity folder(s) to party ID $partyId',
+        'Gave $requestedQuantity $itemDesc to "$displayName"',
       );
     } catch (e) {
       _log.error('FolderDist', 'Failed to give folder', e);
@@ -127,6 +131,8 @@ class FolderDistributionRepository {
     required int folderId,
     required int currentQuantity,
     int requestedQuantity = 1,
+    String? partyName,
+    String? folderName,
   }) async {
     try {
       if (currentQuantity <= 0) {
@@ -160,7 +166,12 @@ class FolderDistributionRepository {
         'quantity': -requestedQuantity, // Negative for ledger consistency
       });
 
-      _log.success('FolderDist', 'Folder returned from party ID $partyId');
+      final displayName = partyName ?? 'ID $partyId';
+      final itemDesc = folderName ?? 'folder(s)';
+      _log.success(
+        'FolderDist',
+        'Returned $requestedQuantity $itemDesc from "$displayName"',
+      );
     } catch (e) {
       _log.error('FolderDist', 'Failed to return folder', e);
       rethrow;

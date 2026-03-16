@@ -62,7 +62,6 @@ class ProductRepository {
         'is_active': true,
         'shop_id': shopId,
       });
-      _log.success('Admin', 'Folder "$name" created for shop ID $shopId');
     } catch (e) {
       _log.error('Admin', 'Failed to create folder "$name"', e);
       rethrow;
@@ -72,7 +71,6 @@ class ProductRepository {
   Future<void> updateFolder(int id, String name, bool isActive) async {
     try {
       await _client.from('folders').update({'folder_name': name, 'is_active': isActive}).eq('id', id);
-      _log.success('Admin', 'Folder "$name" updated (active: $isActive)');
     } catch (e) {
       _log.error('Admin', 'Failed to update folder "$name"', e);
       rethrow;
@@ -105,7 +103,6 @@ class ProductRepository {
         'folder_id': folderId,
         'shop_id': shopId,
       });
-      _log.success('Admin', 'Product Head "$name" created');
     } catch (e) {
       _log.error('Admin', 'Failed to create product head "$name"', e);
       rethrow;
@@ -124,7 +121,6 @@ class ProductRepository {
         'product_rate': rate,
         'folder_id': folderId,
       }).eq('id', id);
-      _log.success('Admin', 'Product Head "$name" updated');
     } catch (e) {
       _log.error('Admin', 'Failed to update product head "$name"', e);
       rethrow;
@@ -142,7 +138,6 @@ class ProductRepository {
         'p_shop_id': shopId,
         'p_apply_to_parties': applyToParties,
       });
-      _log.success('Admin', 'Batch bulk update completed for ${adjustments.length} products');
     } catch (e) {
       _log.error('Admin', 'Batch bulk update failed', e);
       rethrow;

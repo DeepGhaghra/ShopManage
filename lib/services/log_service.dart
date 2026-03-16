@@ -39,13 +39,18 @@ class LogService {
 
   /// Fetch remote logs from Supabase
   Future<void> syncRemoteLogs() async {
-    if (_remoteRepo == null) return;
-    
-    final remoteLogs = await _remoteRepo!.fetchRemoteLogs();
-    if (remoteLogs.isNotEmpty) {
+    try {
+      if (_remoteRepo == null) return;
+      
+      final remoteLogs = await _remoteRepo!.fetchRemoteLogs();
       _logs.clear();
-      _logs.addAll(remoteLogs);
+      if (remoteLogs.isNotEmpty) {
+        _logs.addAll(remoteLogs);
+      }
       _version++;
+    } catch (e) {
+      _log(LogLevel.error, 'System', 'Remote sync failed', e.toString());
+      rethrow;
     }
   }
 
@@ -168,7 +173,36 @@ class LogService {
   // ── Clear ────────────────────────────────────────────────────────────────
   void clearLogs() {
     _logs.clear();
-    _log(LogLevel.info, 'System', 'Logs cleared by user');
+    _log(LogLevel.info, 'System', 'Local logs cleared by user');
+    _version++;
+  }
+
+  /// Wipes both local and remote logs (Admin only)
+  Future<void> wipeRemoteLogs() async {
+    try {
+      if (_remoteRepo == null) return;
+      
+      // 1. Delete remote
+      await _remoteRepo!.clearRemoteLogs();
+      
+      // 2. Clear local
+      _logs.clear();
+      
+      // 3. Document the wipe
+      final entry = LogEntry(
+        level: LogLevel.success, 
+        module: 'System', 
+        message: 'All logs (Local & Remote) wiped by administrator'
+      );
+      
+      _logs.insert(0, entry);
+      await _remoteRepo!.pushRemoteLog(entry);
+      
+      _version++;
+    } catch (e) {
+      _log(LogLevel.error, 'System', 'Failed to wipe remote logs', e.toString());
+      rethrow;
+    }
   }
 
   /// Get all log files (for multi-day browsing)

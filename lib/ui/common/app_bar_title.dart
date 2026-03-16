@@ -17,29 +17,34 @@ class CustomAppBarTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: centerTitle ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            color: AppColors.textPrimary,
-            fontSize: isMobile ? 18 : 20,
-            letterSpacing: -0.5,
-          ),
-        ),
-        if (subtitle != null && subtitle!.isNotEmpty)
+    return Flexible(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: centerTitle ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+        children: [
           Text(
-            subtitle!,
+            title,
             style: TextStyle(
-              fontSize: isMobile ? 10 : 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w900,
+              color: centerTitle ? Colors.white : AppColors.textPrimary,
+              fontSize: isMobile ? 16 : 18,
+              letterSpacing: -0.5,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-      ],
+          if (subtitle != null && subtitle!.isNotEmpty)
+            Text(
+              subtitle!.toUpperCase(),
+              style: TextStyle(
+                fontSize: isMobile ? 9 : 10,
+                fontWeight: FontWeight.w800,
+                color: (centerTitle ? Colors.white : AppColors.textSecondary).withOpacity(0.8),
+                letterSpacing: 0.5,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+        ],
+      ),
     );
   }
 }

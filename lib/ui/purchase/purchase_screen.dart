@@ -16,8 +16,7 @@ import '../../theme/app_theme.dart';
 import '../common/loading_overlay.dart';
 import '../../utils/date_utils.dart';
 import '../common/app_drawer.dart';
-import '../common/app_bar_actions.dart';
-import '../common/app_bar_title.dart';
+import '../admin/admin_scaffold.dart';
 import '../common/confirmation_dialog.dart';
 import '../../utils/error_translator.dart';
 import '../../utils/date_utils.dart';
@@ -335,44 +334,29 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     final designsAsync   = ref.watch(sortedDesignsProvider);
     final locationsAsync = ref.watch(locationsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      appBar: AppBar(
-        leadingWidth: 96,
-        leading: Builder(builder: (context) {
-          return Row(
-            children: [
-              const BackButton(color: AppColors.textPrimary),
-              IconButton(
-                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
-                tooltip: 'Menu',
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ],
-          );
-        }),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: CustomAppBarTitle(
-          title: 'Purchase Entry',
-          subtitle: ref.watch(activeShopProvider)?.shopName,
-        ),
-        actions: const [
-          AppBarActions(),
+    return AdminScaffold(
+      title: 'Purchase Entry',
+      selectedShopId: ref.watch(activeShopProvider)?.id,
+      onShopChanged: (val) {
+        if (val == null) {
+          ref.read(activeShopProvider.notifier).setShop(null);
+        } else {
+          final shopsAsync = ref.read(associatedShopsProvider);
+          shopsAsync.whenData((shops) {
+            final shop = shops.firstWhere((s) => s.id == val);
+            ref.read(activeShopProvider.notifier).setShop(shop);
+          });
+        }
+      },
+      bottom: TabBar(
+        controller: _tabController,
+        indicatorColor: AppColors.primary,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: Colors.grey,
+        tabs: const [
+          Tab(icon: Icon(Icons.edit_note_rounded), text: 'Manual Entry'),
+          Tab(icon: Icon(Icons.upload_file_rounded), text: 'Bulk Upload'),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.primary,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(icon: Icon(Icons.edit_note_rounded), text: 'Manual Entry'),
-            Tab(icon: Icon(Icons.upload_file_rounded), text: 'Bulk Upload'),
-          ],
-        ),
       ),
       drawer: const AppDrawer(currentRoute: '/purchase'),
       body: Stack(

@@ -6,8 +6,7 @@ import '../../services/export_service.dart';
 import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
-import '../common/app_bar_actions.dart';
-import '../common/app_bar_title.dart';
+import '../admin/admin_scaffold.dart';
 import '../../utils/date_utils.dart';
 
 enum DateFilter {
@@ -441,32 +440,21 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       return const Scaffold(body: Center(child: Text('Please select a workspace first.')));
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // A very modern, slightly cool off-white
-      appBar: AppBar(
-        leadingWidth: 96,
-        leading: Builder(builder: (context) {
-          return Row(
-            children: [
-              const BackButton(color: AppColors.textPrimary),
-              IconButton(
-                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
-                tooltip: 'Menu',
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ],
-          );
-        }),
-        centerTitle: true,
-        title: CustomAppBarTitle(
-          title: 'Export Center',
-          subtitle: activeShop?.shopName,
-        ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        actions: const [AppBarActions()],
-      ),
+    return AdminScaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      title: 'Export Center',
+      selectedShopId: activeShop?.id,
+      onShopChanged: (val) {
+        if (val == null) {
+          ref.read(activeShopProvider.notifier).setShop(null);
+        } else {
+          final shopsAsync = ref.read(associatedShopsProvider);
+          shopsAsync.whenData((shops) {
+            final shop = shops.firstWhere((s) => s.id == val);
+            ref.read(activeShopProvider.notifier).setShop(shop);
+          });
+        }
+      },
       drawer: const AppDrawer(currentRoute: '/export'),
       body: Stack(
         children: [

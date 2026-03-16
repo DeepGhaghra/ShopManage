@@ -9,8 +9,7 @@ import '../../utils/error_translator.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
 import '../common/app_drawer.dart';
-import '../common/app_bar_actions.dart';
-import '../common/app_bar_title.dart';
+import '../admin/admin_scaffold.dart';
 import '../../utils/date_utils.dart';
 
 class PartiesScreen extends ConsumerStatefulWidget {
@@ -36,46 +35,35 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
     final partiesAsync = ref.watch(partiesProvider);
     final activeShop = ref.watch(activeShopProvider);
 
-    return Scaffold(
+    return AdminScaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        leadingWidth: 96,
-        leading: Builder(builder: (context) {
-          return Row(
-            children: [
-              const BackButton(color: AppColors.textPrimary),
-              IconButton(
-                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
-                tooltip: 'Menu',
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ],
-          );
-        }),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        surfaceTintColor: Colors.transparent,
-        title: CustomAppBarTitle(
-          title: 'Parties',
-          subtitle: ref.watch(activeShopProvider)?.shopName,
+      title: 'Parties',
+      selectedShopId: activeShop?.id,
+      onShopChanged: (val) {
+        if (val == null) {
+          ref.read(activeShopProvider.notifier).setShop(null);
+        } else {
+          final shopsAsync = ref.read(associatedShopsProvider);
+          shopsAsync.whenData((shops) {
+            final shop = shops.firstWhere((s) => s.id == val);
+            ref.read(activeShopProvider.notifier).setShop(shop);
+          });
+        }
+      },
+      actions: [
+        IconButton(
+          icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.white, size: 20),
+          onPressed: () {
+            setState(() {
+              _isSearching = !_isSearching;
+              if (!_isSearching) {
+                _searchQuery = '';
+                _searchController.clear();
+              }
+            });
+          },
         ),
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search, color: AppColors.primary),
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
-                  _searchQuery = '';
-                  _searchController.clear();
-                }
-              });
-            },
-          ),
-          const AppBarActions(),
-        ],
-      ),
+      ],
       drawer: const AppDrawer(currentRoute: '/parties'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditPartyDialog(context, ref),

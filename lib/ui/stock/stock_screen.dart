@@ -10,8 +10,7 @@ import '../../utils/error_translator.dart';
 import '../common/error_view.dart';
 import '../common/empty_state_view.dart';
 import '../common/app_drawer.dart';
-import '../common/app_bar_actions.dart';
-import '../common/app_bar_title.dart';
+import '../admin/admin_scaffold.dart';
 import 'design_history_sheet.dart';
 
 class StockScreen extends ConsumerStatefulWidget {
@@ -54,54 +53,42 @@ class _StockScreenState extends ConsumerState<StockScreen> {
   Widget build(BuildContext context) {
     final stockAsync = ref.watch(shopStockProvider);
     final activeShop = ref.watch(activeShopProvider);
-    final shopName = activeShop?.shopName ?? '';
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      appBar: AppBar(
-        leadingWidth: 96,
-        leading: Builder(
-          builder: (context) {
-            return Row(
-              children: [
-                const BackButton(color: AppColors.textPrimary),
-                IconButton(
-                  icon: const Icon(
-                    Icons.menu_rounded,
-                    color: AppColors.primary,
-                  ),
-                  tooltip: 'Menu',
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ],
-            );
-          },
+    return AdminScaffold(
+      title: 'Stock View',
+      selectedShopId: activeShop?.id,
+      onShopChanged: (val) {
+        if (val == null) {
+          ref.read(activeShopProvider.notifier).setShop(null);
+        } else {
+          final shopsAsync = ref.read(associatedShopsProvider);
+          shopsAsync.whenData((shops) {
+            final shop = shops.firstWhere((s) => s.id == val);
+            ref.read(activeShopProvider.notifier).setShop(shop);
+          });
+        }
+      },
+      actions: [
+        IconButton(
+          icon: const Icon(
+            Icons.add_shopping_cart_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
+          tooltip: 'Add Stock',
+          onPressed: () => _showAddStockDialog(context, ref),
         ),
-        title: CustomAppBarTitle(title: 'Stock View', subtitle: shopName),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.add_shopping_cart_rounded,
-              color: AppColors.primary,
-            ),
-            tooltip: 'Add Stock',
-            onPressed: () => _showAddStockDialog(context, ref),
+        IconButton(
+          icon: const Icon(
+            Icons.compare_arrows_rounded,
+            color: Colors.white,
+            size: 20,
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.compare_arrows_rounded,
-              color: AppColors.primary,
-            ),
-            tooltip: 'Transfer Stock',
-            onPressed: () => _showTransferStockDialog(context, ref),
-          ),
-          const AppBarActions(),
-        ],
-      ),
+          tooltip: 'Transfer Stock',
+          onPressed: () => _showTransferStockDialog(context, ref),
+        ),
+      ],
       drawer: const AppDrawer(currentRoute: '/stock'),
       body: stockAsync.when(
         data: (stockList) {

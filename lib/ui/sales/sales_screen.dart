@@ -11,8 +11,7 @@ import '../../services/core_providers.dart';
 import '../../services/log_service.dart';
 import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
-import '../common/app_bar_actions.dart';
-import '../common/app_bar_title.dart';
+import '../admin/admin_scaffold.dart';
 import '../common/confirmation_dialog.dart';
 import '../common/loading_overlay.dart';
 import '../common/error_view.dart';
@@ -944,32 +943,21 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     // ── Recent Sales Panel ────────────────────────────────────────────────────
     Widget recentSalesContent = _buildRecentSalesContent(isWide: isWide);
 
-    return Scaffold(
-      backgroundColor: _editingInvoiceNo != null ? const Color(0xFFF1F5F9) : AppColors.scaffoldBg, // Light slate in edit mode
-      appBar: AppBar(
-        leadingWidth: 96,
-        leading: Builder(builder: (context) {
-          return Row(
-            children: [
-              const BackButton(color: AppColors.textPrimary),
-              IconButton(
-                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
-                tooltip: 'Menu',
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ],
-          );
-        }),
-        centerTitle: true,
-        title: CustomAppBarTitle(
-          title: 'Sales Entry',
-          subtitle: ref.watch(activeShopProvider)?.shopName,
-        ),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        actions: const [
-          AppBarActions(),
-        ],
-      ),
+    return AdminScaffold(
+      backgroundColor: _editingInvoiceNo != null ? const Color(0xFFF1F5F9) : AppColors.scaffoldBg,
+      title: 'Sales Entry',
+      selectedShopId: ref.watch(activeShopProvider)?.id,
+      onShopChanged: (val) {
+        if (val == null) {
+          ref.read(activeShopProvider.notifier).setShop(null);
+        } else {
+          final shopsAsync = ref.read(associatedShopsProvider);
+          shopsAsync.whenData((shops) {
+            final shop = shops.firstWhere((s) => s.id == val);
+            ref.read(activeShopProvider.notifier).setShop(shop);
+          });
+        }
+      },
       drawer: const AppDrawer(currentRoute: '/sales'),
       body: Stack(
         children: [

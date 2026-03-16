@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shopmanage/theme/app_theme.dart';
 import '../../services/core_providers.dart';
-import '../../models/shop.dart';
 import '../common/searchable_selector.dart';
 import '../common/confirmation_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -17,6 +16,7 @@ class AdminScaffold extends ConsumerWidget {
   final int? selectedShopId;
   final Function(int?)? onShopChanged;
   final Color? backgroundColor;
+  final PreferredSizeWidget? bottom;
 
   const AdminScaffold({
     super.key,
@@ -28,19 +28,20 @@ class AdminScaffold extends ConsumerWidget {
     this.selectedShopId,
     this.onShopChanged,
     this.backgroundColor,
+    this.bottom,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final shopsAsync = ref.watch(associatedShopsProvider);
-    final isMobile = MediaQuery.of(context).size.width < 600;
-
+    final isAdmin = ref.watch(isAdminProvider);
     return Scaffold(
       backgroundColor: backgroundColor ?? AppColors.scaffoldBg,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        bottom: bottom,
         leading: drawer != null 
             ? Builder(
                 builder: (context) => IconButton(
@@ -48,75 +49,90 @@ class AdminScaffold extends ConsumerWidget {
                   onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
               )
-            : null,
-        centerTitle: false,
-        titleSpacing: 4,
-        title: Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: 0.1),
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: [
-          if (onShopChanged != null)
-            shopsAsync.when(
-              data: (shops) {
-                final selectedShop = (selectedShopId == null || shops.isEmpty) 
-                    ? null 
-                    : shops.firstWhere((s) => s.id == selectedShopId, orElse: () => shops.first);
-                
-                final screenWidth = MediaQuery.of(context).size.width;
-                final dropDownWidth = screenWidth < 380 ? 100.0 : (isMobile ? 120.0 : 250.0);
-                
+            : const BackButton(color: Colors.white), // Standardized back button
+        centerTitle: true, // Prioritize central visibility
+        titleSpacing: 0,
+        title: shopsAsync.when(
+          data: (shops) {
+            final currentShop = shops.where((s) => s.id == selectedShopId).firstOrNull;
+            final subtitle = currentShop?.shopName ?? (isAdmin && selectedShopId == null ? 'All Shops' : '');
+            
+            return InkWell(
+              onTap: onShopChanged == null ? null : () {
                 final shopMap = [
-                  {'id': null, 'shop_name': 'All Shops'},
+                  if (isAdmin) {'id': null, 'shop_name': 'All Shops'},
                   ...shops.map((s) => {'id': s.id, 'shop_name': s.shopName}),
                 ];
-                
-                return InkWell(
-                  onTap: () => SearchableSelector.show(
-                    context: context,
-                    title: 'Switch Shop',
-                    items: shopMap,
-                    labelKey: 'shop_name',
-                    icon: Icons.storefront_rounded,
-                    iconColor: AppColors.primary,
-                    onSelected: (id) => onShopChanged!(id), 
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.storefront_rounded, color: Colors.white.withOpacity(0.9), size: 16),
-                        const SizedBox(width: 8),
-                        ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: dropDownWidth),
-                          child: Text(
-                            selectedShop?.shopName ?? 'All Shops',
-                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white.withOpacity(0.7), size: 16),
-                      ],
-                    ),
-                  ),
+                SearchableSelector.show(
+                  context: context,
+                  title: 'Switch Shop',
+                  items: shopMap,
+                  labelKey: 'shop_name',
+                  icon: Icons.storefront_rounded,
+                  iconColor: AppColors.primary,
+                  onSelected: (id) => onShopChanged!(id), 
                 );
               },
-              loading: () => const SizedBox(),
-              error: (_, __) => const SizedBox(),
-            ),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white, 
+                        fontWeight: FontWeight.w900, 
+                        fontSize: 16, 
+                        letterSpacing: -0.2
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.storefront_rounded, 
+                            color: Colors.white.withOpacity(0.7), 
+                            size: 10
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              subtitle.toUpperCase(),
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8), 
+                                fontSize: 9, 
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (onShopChanged != null) ...[
+                            const SizedBox(width: 2),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded, 
+                              color: Colors.white.withOpacity(0.5), 
+                              size: 12
+                            ),
+                          ],
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+          loading: () => Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+          error: (_, __) => Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+        ),
+        actions: [
           if (actions != null) ...actions!,
           IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white70),
+            icon: const Icon(Icons.logout_rounded, color: Colors.white70, size: 20),
             tooltip: 'Sign Out',
             onPressed: () async {
               final confirmed = await ConfirmationDialog.showSignOut(context);
@@ -126,7 +142,7 @@ class AdminScaffold extends ConsumerWidget {
               }
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
         ],
       ),
       drawer: drawer,

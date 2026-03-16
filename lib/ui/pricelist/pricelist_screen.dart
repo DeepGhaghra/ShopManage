@@ -10,8 +10,7 @@ import '../../models/product_head.dart';
 import '../../models/pricelist.dart';
 import '../../theme/app_theme.dart';
 import '../common/app_drawer.dart';
-import '../common/app_bar_actions.dart';
-import '../common/app_bar_title.dart';
+import '../admin/admin_scaffold.dart';
 import '../../utils/error_translator.dart';
 
 class PricelistScreen extends ConsumerStatefulWidget {
@@ -149,40 +148,30 @@ class _PricelistScreenState extends ConsumerState<PricelistScreen> {
     final partiesAsync = ref.watch(partiesProvider);
     final productsAsync = ref.watch(productHeadsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg, // Slightly darker for depth
-      appBar: AppBar(
-        leadingWidth: 96,
-        leading: Builder(builder: (context) {
-          return Row(
-            children: [
-              const BackButton(color: AppColors.textPrimary),
-              IconButton(
-                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
-                tooltip: 'Menu',
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-            ],
-          );
-        }),
-        centerTitle: true,
-        title: CustomAppBarTitle(
-          title: 'Price List',
-          subtitle: ref.watch(activeShopProvider)?.shopName,
-        ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        actions: [
-          if (_isLoadingPrices || _isSaving)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.only(right: 16.0),
-                child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
+    return AdminScaffold(
+      backgroundColor: AppColors.scaffoldBg,
+      title: 'Price List',
+      selectedShopId: ref.watch(activeShopProvider)?.id,
+      onShopChanged: (val) {
+        if (val == null) {
+          ref.read(activeShopProvider.notifier).setShop(null);
+        } else {
+          final shopsAsync = ref.read(associatedShopsProvider);
+          shopsAsync.whenData((shops) {
+            final shop = shops.firstWhere((s) => s.id == val);
+            ref.read(activeShopProvider.notifier).setShop(shop);
+          });
+        }
+      },
+      actions: [
+        if (_isLoadingPrices || _isSaving)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.only(right: 8.0),
+              child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
             ),
-          const AppBarActions(),
-        ],
-      ),
+          ),
+      ],
       drawer: const AppDrawer(currentRoute: '/pricelist'),
       body: Center(
         child: ConstrainedBox(

@@ -163,12 +163,29 @@ class _ShopManagementCard extends ConsumerWidget {
     if (result == true) {
       try {
         final log = ref.read(logServiceProvider);
+        final oldName = shop.shopName;
+        final oldPrintName = shop.shopPrintName;
+        final oldShortName = shop.shopShortName;
+        final newName = nameController.text.trim();
+        final newPrintName = printNameController.text.trim();
+        final newShortName = shortNameController.text.trim();
+
         await ref.read(shopRepositoryProvider).updateShop(shop.id, {
-          'shop_name': nameController.text.trim(),
-          'shop_print_name': printNameController.text.trim(),
-          'shop_short_name': shortNameController.text.trim(),
+          'shop_name': newName,
+          'shop_print_name': newPrintName,
+          'shop_short_name': newShortName,
         });
-        log.success('Admin', 'Shop details updated for "${nameController.text.trim()}"');
+
+        final List<String> changes = [];
+        if (oldName != newName) changes.add('Name: "$oldName" → "$newName"');
+        if (oldPrintName != newPrintName) changes.add('Print Name: "$oldPrintName" → "$newPrintName"');
+        if (oldShortName != newShortName) changes.add('Code: "$oldShortName" → "$newShortName"');
+        
+        if (changes.isNotEmpty) {
+          log.success('Admin', 'Shop details updated: ${changes.join(', ')}');
+        } else {
+          log.success('Admin', 'Shop settings updated for "$newName"');
+        }
         ref.invalidate(shopsProvider);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

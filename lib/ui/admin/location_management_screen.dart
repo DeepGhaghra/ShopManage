@@ -276,8 +276,15 @@ class _LocationManagementScreenState extends ConsumerState<LocationManagementScr
       try {
         final log = ref.read(logServiceProvider);
         if (isEditing) {
-          await ref.read(shopRepositoryProvider).updateLocation(location['id'], nameController.text.trim());
-          log.success('Admin', 'Location "${nameController.text.trim()}" updated');
+          final oldName = location['name'];
+          final newName = nameController.text.trim();
+          await ref.read(shopRepositoryProvider).updateLocation(location['id'], newName);
+          
+          if (oldName != newName) {
+            log.success('Admin', 'Location name updated: "$oldName" → "$newName"');
+          } else {
+            log.success('Admin', 'Location "$newName" settings updated');
+          }
         } else {
           await ref.read(shopRepositoryProvider).createLocation(nameController.text.trim(), selectedShopId!);
           log.success('Admin', 'New location "${nameController.text.trim()}" created');

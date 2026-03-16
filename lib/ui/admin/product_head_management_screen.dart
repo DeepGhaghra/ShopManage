@@ -86,7 +86,12 @@ class _ProductHeadManagementScreenState
             applyToParties: _applyToPartiesGlobally,
           );
 
-      ref.read(logServiceProvider).success('Admin', 'Bulk rate adjustment completed for ${validAdjustments.length} products');
+      ref
+          .read(logServiceProvider)
+          .success(
+            'Admin',
+            'Bulk rate adjustment completed for ${validAdjustments.length} products',
+          );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -302,7 +307,7 @@ class _ProductHeadManagementScreenState
                                               head['product_name'],
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.w800,
-                                                fontSize: 13,
+                                                fontSize: 15,
                                                 color: AppColors.textPrimary,
                                                 letterSpacing: -0.2,
                                               ),
@@ -310,22 +315,31 @@ class _ProductHeadManagementScreenState
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 12),
-                                      Wrap(
-                                        spacing: 6,
-                                        runSpacing: 6,
-                                        children: [
-                                          _buildTag(
-                                            shopName,
-                                            AppColors.cardSales,
-                                          ),
-                                          _buildTag(
-                                            folderName,
-                                            AppColors.cardStock,
-                                          ),
-                                        ],
+                                      const SizedBox(height: 8),
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: 48,
+                                        ), // Aligns with text after icon box
+                                        child: Wrap(
+                                          spacing: 6,
+                                          runSpacing: 6,
+                                          children: [
+                                            _buildTag(
+                                              shopName,
+                                              AppColors.cardSales,
+                                            ),
+                                            _buildTag(
+                                              folderName,
+                                              AppColors.cardStock,
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      const Divider(height: 24),
+                                      const Divider(
+                                        height: 12,
+                                        thickness: 0.5,
+                                        color: Colors.black12,
+                                      ),
                                       Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
@@ -334,7 +348,7 @@ class _ProductHeadManagementScreenState
                                             '₹$currentRate',
                                             style: const TextStyle(
                                               fontWeight: FontWeight.w900,
-                                              fontSize: 16,
+                                              fontSize: 17,
                                               color: AppColors.textPrimary,
                                             ),
                                           ),
@@ -573,7 +587,7 @@ class _ProductHeadManagementScreenState
                                 controller: nameController,
                                 decoration: const InputDecoration(
                                   labelText: 'Product Name',
-                                  hintText: 'e.g. Green 1mm',
+                                  hintText: 'e.g. Sonova 1mm',
                                   border: OutlineInputBorder(),
                                 ),
                                 autofocus: true,
@@ -629,10 +643,13 @@ class _ProductHeadManagementScreenState
                     ),
                     const SizedBox(height: 20),
                     foldersAsync.when(
-                      data: (folders) {
+                      data: (allFolders) {
+                        final folders = allFolders
+                            .where((f) => f['shop_id'] == selectedShopId)
+                            .toList();
                         final folder = folders.firstWhere(
                           (f) => f['id'] == selectedFolderId,
-                          orElse: () => {'folder_name': 'Select Category'},
+                          orElse: () => {'folder_name': 'Select Folder'},
                         );
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,21 +665,25 @@ class _ProductHeadManagementScreenState
                             ),
                             const SizedBox(height: 8),
                             InkWell(
-                              onTap: () => SearchableSelector.show(
-                                context: context,
-                                title: 'Select Folder',
-                                items: folders,
-                                labelKey: 'folder_name',
-                                icon: Icons.folder_open_rounded,
-                                iconColor: AppColors.cardStock,
-                                onSelected: (id) =>
-                                    setDialogState(() => selectedFolderId = id),
-                              ),
+                              onTap: selectedShopId == null
+                                  ? null
+                                  : () => SearchableSelector.show(
+                                        context: context,
+                                        title: 'Select Folder',
+                                        items: folders,
+                                        labelKey: 'folder_name',
+                                        icon: Icons.folder_open_rounded,
+                                        iconColor: AppColors.cardStock,
+                                        onSelected: (id) => setDialogState(
+                                            () => selectedFolderId = id),
+                                      ),
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
+                                  color: selectedShopId == null
+                                      ? Colors.grey.shade100
+                                      : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: Colors.grey.shade300,
@@ -670,26 +691,34 @@ class _ProductHeadManagementScreenState
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.folder_open_rounded,
                                       size: 18,
-                                      color: AppColors.cardStock,
+                                      color: selectedShopId == null
+                                          ? Colors.grey
+                                          : AppColors.cardStock,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        folder['folder_name'],
-                                        style: const TextStyle(
+                                        selectedShopId == null
+                                            ? 'Please select a shop first'
+                                            : folder['folder_name'],
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w700,
                                           fontSize: 13,
+                                          color: selectedShopId == null
+                                              ? Colors.grey
+                                              : AppColors.textPrimary,
                                         ),
                                       ),
                                     ),
-                                    const Icon(
-                                      Icons.search_rounded,
-                                      size: 16,
-                                      color: Colors.grey,
-                                    ),
+                                    if (selectedShopId != null)
+                                      const Icon(
+                                        Icons.search_rounded,
+                                        size: 16,
+                                        color: Colors.grey,
+                                      ),
                                   ],
                                 ),
                               ),
@@ -733,8 +762,10 @@ class _ProductHeadManagementScreenState
                                   labelKey: 'shop_name',
                                   icon: Icons.storefront_rounded,
                                   iconColor: AppColors.cardSales,
-                                  onSelected: (id) =>
-                                      setDialogState(() => selectedShopId = id),
+                                  onSelected: (id) => setDialogState(() {
+                                    selectedShopId = id;
+                                    selectedFolderId = null; // Reset folder
+                                  }),
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
@@ -805,28 +836,48 @@ class _ProductHeadManagementScreenState
       try {
         final rate = int.tryParse(rateController.text.trim()) ?? 0;
         if (isEditing) {
+          final oldName = head['product_name'];
+          final oldRate = head['product_rate'] ?? 0;
+          final newName = nameController.text.trim();
+
           await ref
               .read(productRepositoryProvider)
               .updateProductHead(
                 id: head['id'],
-                name: nameController.text.trim(),
+                name: newName,
                 rate: rate,
                 folderId: selectedFolderId!,
               );
+
+          final List<String> changes = [];
+          if (oldName != newName) changes.add('Name: "$oldName" → "$newName"');
+          if (oldRate != rate) changes.add('Rate: ₹$oldRate → ₹$rate');
+          // Note: Folder change detection could be added here if needed,
+          // but usually these are the main ones users track.
+
+          if (changes.isNotEmpty) {
+            ref
+                .read(logServiceProvider)
+                .success('Admin', '"$newName" updated - ${changes.join(', ')}');
+          } else {
+            ref
+                .read(logServiceProvider)
+                .success('Admin', 'Product "$newName" settings updated');
+          }
         } else {
+          final newName = nameController.text.trim();
           await ref
               .read(productRepositoryProvider)
               .createProductHead(
-                name: nameController.text.trim(),
+                name: newName,
                 rate: rate,
                 folderId: selectedFolderId!,
                 shopId: selectedShopId!,
               );
+          ref
+              .read(logServiceProvider)
+              .success('Admin', 'New product "$newName" created');
         }
-        ref.read(logServiceProvider).success(
-              'Admin',
-              'Product "${nameController.text.trim()}" ${isEditing ? 'updated' : 'created'}',
-            );
         ref.invalidate(allProductHeadsProvider);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

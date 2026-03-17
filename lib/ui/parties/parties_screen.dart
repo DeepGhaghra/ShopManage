@@ -52,7 +52,7 @@ class _PartiesScreenState extends ConsumerState<PartiesScreen> {
       },
       actions: [
         IconButton(
-          icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.white, size: 20),
+          icon: Icon(_isSearching ? Icons.close : Icons.search, color: AppColors.primary, size: 20),
           onPressed: () {
             setState(() {
               _isSearching = !_isSearching;

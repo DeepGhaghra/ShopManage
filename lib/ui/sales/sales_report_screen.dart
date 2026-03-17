@@ -511,55 +511,57 @@ class _ReportRow extends StatelessWidget {
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Row 1: Inv + Party Name + Qty
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               _InvoiceBadge(invoiceNo: invoiceNo),
-                              Text(
-                                date.formatDateIST(),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w700,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  partyName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 15,
+                                    color: AppColors.textPrimary,
+                                    letterSpacing: -0.4,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              const SizedBox(width: 8),
+                              _SheetQty(qty: totalSheets),
                             ],
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            partyName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                              color: AppColors.textPrimary,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
                           const SizedBox(height: 12),
+                          // Row 2: Date + Actions
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _SheetQty(qty: totalSheets),
-                              Row(
-                                children: [
-                                  _ActionButton(
-                                    icon: Icons.visibility_rounded,
-                                    color: Colors.deepPurple,
-                                    onPressed: onView,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _ActionButton(
-                                    icon: Icons.edit_document,
-                                    color: Colors.blue.shade700,
-                                    onPressed: onEdit,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _ActionButton(
-                                    icon: Icons.print_rounded,
-                                    color: Colors.teal.shade700,
-                                    onPressed: onPrint,
-                                  ),
-                                ],
+                              Text(
+                                date.formatDateIST(),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textSecondary.withOpacity(0.5),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const Spacer(),
+                              _ActionButton(
+                                icon: Icons.visibility_rounded,
+                                color: Colors.deepPurple,
+                                onPressed: onView,
+                              ),
+                              const SizedBox(width: 4),
+                              _ActionButton(
+                                icon: Icons.edit_document,
+                                color: Colors.blue.shade700,
+                                onPressed: onEdit,
+                              ),
+                              const SizedBox(width: 4),
+                              _ActionButton(
+                                icon: Icons.print_rounded,
+                                color: Colors.teal.shade700,
+                                onPressed: onPrint,
                               ),
                             ],
                           ),
@@ -687,6 +689,40 @@ class _SheetQty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    if (isMobile) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.cardSales.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'QTY:',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                color: AppColors.cardSales.withOpacity(0.5),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$qty',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+                color: AppColors.cardSales,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(

@@ -46,12 +46,13 @@ class AdminScaffold extends ConsumerWidget {
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         bottom: bottom,
         toolbarHeight: 72,
-        leadingWidth: drawer != null ? 100 : 56,
+        leadingWidth: (drawer != null && Navigator.canPop(context)) ? 100 : 56,
         leading: drawer != null
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const BackButton(color: AppColors.textPrimary),
+                  if (Navigator.canPop(context))
+                    const BackButton(color: AppColors.textPrimary),
                   Builder(
                     builder: (context) => IconButton(
                       icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
@@ -60,7 +61,7 @@ class AdminScaffold extends ConsumerWidget {
                   ),
                 ],
               )
-            : const BackButton(color: AppColors.textPrimary),
+            : (Navigator.canPop(context) ? const BackButton(color: AppColors.textPrimary) : null),
         centerTitle: true,
         titleSpacing: 8,
         title: shopsAsync.when(

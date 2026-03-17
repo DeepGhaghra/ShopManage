@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../ui/auth/login_screen.dart';
 import '../ui/home/home_screen.dart';
 import '../ui/sales/sales_screen.dart';
+import '../ui/sales/sales_report_screen.dart';
 import '../ui/stock/stock_screen.dart';
 import '../ui/parties/parties_screen.dart';
 import '../ui/purchase/purchase_screen.dart';
@@ -54,7 +55,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
-      GoRoute(path: '/sales', builder: (context, state) => const SalesScreen()),
+      GoRoute(path: '/sales', builder: (context, state) {
+        final editInvoiceNo = state.uri.queryParameters['edit'];
+        return SalesScreen(editInvoiceNo: editInvoiceNo);
+      }),
+      GoRoute(path: '/sales-report', builder: (context, state) => const SalesReportScreen()),
       GoRoute(path: '/stock', builder: (context, state) => const StockScreen()),
       GoRoute(
         path: '/parties',

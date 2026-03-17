@@ -99,7 +99,8 @@ T useMemoized<T>(T Function() factory, List<Object?> keys) {
 
 // ─── Widget ───────────────────────────────────────────────────────────────────
 class SalesScreen extends ConsumerStatefulWidget {
-  const SalesScreen({super.key});
+  final String? editInvoiceNo;
+  const SalesScreen({super.key, this.editInvoiceNo});
 
   @override
   ConsumerState<SalesScreen> createState() => _SalesScreenState();
@@ -120,7 +121,43 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => _fetchNextInvoiceNo());
+    Future.microtask(() {
+      if (widget.editInvoiceNo != null) {
+        _handleEditFromParam(widget.editInvoiceNo!);
+      } else {
+        _fetchNextInvoiceNo();
+      }
+    });
+  }
+
+  Future<void> _handleEditFromParam(String invoiceNo) async {
+    final activeShop = ref.read(activeShopProvider);
+    if (activeShop == null) return;
+    
+    setState(() => _isInitializing = true);
+    try {
+      // We need to wait for groupedRecentSalesProvider to have the data
+      // or we can just fetch it directly from the repository
+      final entries = await ref.read(salesRepositoryProvider).getRecentSales(activeShop.id);
+      final grouped = <String, List<SalesEntry>>{};
+      for (var e in entries) {
+        grouped.putIfAbsent(e.invoiceno, () => []).add(e);
+      }
+      
+      if (grouped.containsKey(invoiceNo)) {
+        final invoiceEntries = grouped[invoiceNo]!;
+        final parties = await ref.read(partiesProvider.future);
+        final stock = await ref.read(shopStockProvider.future);
+        
+        if (mounted) {
+          _loadInvoiceForEdit(invoiceNo, invoiceEntries, parties, stock);
+        }
+      }
+    } catch (e) {
+      ref.read(logServiceProvider).error('Sales', 'Failed to load invoice for edit from param', e);
+    } finally {
+      if (mounted) setState(() => _isInitializing = false);
+    }
   }
 
   Future<void> _fetchNextInvoiceNo() async {

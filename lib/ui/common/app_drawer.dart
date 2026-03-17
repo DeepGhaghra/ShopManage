@@ -130,6 +130,13 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   _drawerItem(
                     context,
+                    icon: Icons.receipt_long_outlined,
+                    label: 'Sales Report',
+                    route: '/sales-report',
+                    isSelected: currentRoute == '/sales-report',
+                  ),
+                  _drawerItem(
+                    context,
                     icon: Icons.add_shopping_cart_outlined,
                     label: 'Purchase Entry',
                     route: '/purchase',

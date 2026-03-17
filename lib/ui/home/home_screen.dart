@@ -268,18 +268,24 @@ class HomeScreen extends ConsumerWidget {
                                 baseColor: const Color(0xFFEF6C00),
                                 onTap: () => context.push('/stock'),
                               ),
-                              _ActionCard(
-                                label: 'New Sales',
-                                icon: Icons.point_of_sale_rounded,
-                                baseColor: const Color(0xFF0F4C81),
-                                onTap: () => context.push('/sales'),
-                              ),
-                              _ActionCard(
-                                label: 'New Purchase',
-                                icon: Icons.add_shopping_cart_rounded,
-                                baseColor: const Color(0xFF2E7D32),
-                                onTap: () => context.push('/purchase'),
-                              ),
+                                _ActionCard(
+                                  label: 'New Sales',
+                                  icon: Icons.point_of_sale_rounded,
+                                  baseColor: const Color(0xFF0F4C81),
+                                  onTap: () => context.push('/sales'),
+                                ),
+                                _ActionCard(
+                                  label: 'Sales Report',
+                                  icon: Icons.receipt_long_rounded,
+                                  baseColor: const Color(0xFF0D47A1),
+                                  onTap: () => context.push('/sales-report'),
+                                ),
+                                _ActionCard(
+                                  label: 'New Purchase',
+                                  icon: Icons.add_shopping_cart_rounded,
+                                  baseColor: const Color(0xFF2E7D32),
+                                  onTap: () => context.push('/purchase'),
+                                ),
 
                               _ActionCard(
                                 label: 'Price List',

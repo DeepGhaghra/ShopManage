@@ -17,6 +17,7 @@ class AdminScaffold extends ConsumerWidget {
   final Function(int?)? onShopChanged;
   final Color? backgroundColor;
   final PreferredSizeWidget? bottom;
+  final double? maxWidth;
 
   const AdminScaffold({
     super.key,
@@ -29,6 +30,7 @@ class AdminScaffold extends ConsumerWidget {
     this.onShopChanged,
     this.backgroundColor,
     this.bottom,
+    this.maxWidth,
   });
 
   @override
@@ -38,20 +40,29 @@ class AdminScaffold extends ConsumerWidget {
     return Scaffold(
       backgroundColor: backgroundColor ?? AppColors.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         bottom: bottom,
+        toolbarHeight: 72,
+        leadingWidth: drawer != null ? 100 : 56,
         leading: drawer != null
-            ? Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu_rounded, color: Colors.white),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const BackButton(color: AppColors.textPrimary),
+                  Builder(
+                    builder: (context) => IconButton(
+                      icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
+                  ),
+                ],
               )
-            : const BackButton(color: Colors.white), // Standardized back button
-        centerTitle: true, // Prioritize central visibility
-        titleSpacing: 0,
+            : const BackButton(color: AppColors.textPrimary),
+        centerTitle: true,
+        titleSpacing: 8,
         title: shopsAsync.when(
           data: (shops) {
             final currentShop = shops
@@ -90,7 +101,7 @@ class AdminScaffold extends ConsumerWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w900,
                         fontSize: 16,
                         letterSpacing: -0.2,
@@ -105,11 +116,11 @@ class AdminScaffold extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDim.withOpacity(0.5),
+                          color: AppColors.scaffoldBg,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: AppColors.accent.withOpacity(0.3),
-                            width: 0.5,
+                            color: AppColors.divider,
+                            width: 1.0,
                           ),
                         ),
                         child: Row(
@@ -117,7 +128,7 @@ class AdminScaffold extends ConsumerWidget {
                           children: [
                             const Icon(
                               Icons.storefront_rounded,
-                              color: Colors.white,
+                              color: AppColors.primary,
                               size: 11,
                             ),
                             const SizedBox(width: 6),
@@ -125,7 +136,7 @@ class AdminScaffold extends ConsumerWidget {
                               child: Text(
                                 subtitle.toUpperCase(),
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                   fontSize: 10,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 1.0,
@@ -137,7 +148,7 @@ class AdminScaffold extends ConsumerWidget {
                               const SizedBox(width: 4),
                               Icon(
                                 Icons.keyboard_arrow_down_rounded,
-                                color: Colors.white.withOpacity(0.7),
+                                color: AppColors.textSecondary,
                                 size: 14,
                               ),
                             ],
@@ -164,7 +175,7 @@ class AdminScaffold extends ConsumerWidget {
           IconButton(
             icon: const Icon(
               Icons.logout_rounded,
-              color: Colors.white70,
+              color: AppColors.textSecondary,
               size: 20,
             ),
             tooltip: 'Sign Out',
@@ -180,12 +191,15 @@ class AdminScaffold extends ConsumerWidget {
         ],
       ),
       drawer: drawer,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 1000,
-          ), // Reduced from 1200
-          child: body,
+      body: SizedBox.expand(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: maxWidth ?? 1000,
+            ),
+            child: body,
+          ),
         ),
       ),
       floatingActionButton: floatingActionButton,

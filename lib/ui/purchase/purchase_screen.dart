@@ -347,6 +347,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
 
     return AdminScaffold(
       title: 'Purchase Entry',
+      maxWidth: 900,
       selectedShopId: ref.watch(activeShopProvider)?.id,
       onShopChanged: (val) {
         if (val == null) {
@@ -371,18 +372,15 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       ),
       drawer: const AppDrawer(currentRoute: '/purchase'),
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: Column(
-                children: [
-                  // ── Shared header: Party + Date ──────────────────────────────────────
-                  KeyedSubtree(
-                    key: ValueKey('header_$_formResetKey'),
-                    child: _buildHeader(partiesAsync),
-                  ),
-
+          Column(
+            children: [
+              // ── Shared header: Party + Date ──────────────────────────────────────
+              KeyedSubtree(
+                key: ValueKey('header_$_formResetKey'),
+                child: _buildHeader(partiesAsync),
+              ),
               // ── Tab views ────────────────────────────────────────────────────────
               Expanded(
                 child: TabBarView(
@@ -390,14 +388,12 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                   controller: _tabController,
                   children: [
                     // Tab 1 — Manual Entry
-                     designsAsync.when(
-                       data: (designs) {
-                         return locationsAsync.when(
-                           data: (locations) => _buildManualTab(designs, locations),
-                           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                           error: (e, _) => Center(child: Text('Error: $e')),
-                         );
-                       },
+                    designsAsync.when(
+                      data: (designs) => locationsAsync.when(
+                        data: (locations) => _buildManualTab(designs, locations),
+                        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                        error: (e, _) => Center(child: Text('Error: $e')),
+                      ),
                       loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
                       error: (e, _) => Center(child: Text('Error: $e')),
                     ),
@@ -416,12 +412,10 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
               ),
             ],
           ),
-        ),
+          if (_isSaving)
+            const LoadingOverlay(message: 'Saving...'),
+        ],
       ),
-      if (_isSaving)
-        const LoadingOverlay(message: 'Saving...'),
-    ],
-  ),
 );
 }
 

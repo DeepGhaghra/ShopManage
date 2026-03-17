@@ -8,7 +8,6 @@ import '../../models/shop.dart';
 import '../../theme/app_theme.dart';
 import '../common/error_view.dart';
 import '../common/confirmation_dialog.dart';
-import '../common/app_drawer.dart';
 import '../common/app_bar_actions.dart';
 import '../common/app_bar_title.dart';
 import '../../utils/error_translator.dart';
@@ -104,6 +103,8 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
+        toolbarHeight: 72,
         centerTitle: true,
         title: CustomAppBarTitle(
           title: 'Dashboard',
@@ -111,7 +112,6 @@ class HomeScreen extends ConsumerWidget {
         ),
         actions: const [AppBarActions()],
       ),
-      drawer: const AppDrawer(currentRoute: '/'),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(dashboardMetricsProvider),
         color: AppColors.primary,
@@ -220,15 +220,6 @@ class HomeScreen extends ConsumerWidget {
                                 color: const Color(0xFF388E3C),
                                 onTap: () =>
                                     _showTrendingDetail(context, activeShop.id),
-                              ),
-                              const SizedBox(width: 16),
-                              _MetricCard(
-                                title: 'Folders Out',
-                                value: '${metrics['totalFoldersDist'] ?? 0}',
-                                icon: Icons.folder_shared_rounded,
-                                color: const Color(0xFFE91E63),
-                                onTap: () =>
-                                    context.push('/folder-distribution'),
                               ),
                             ],
                           );

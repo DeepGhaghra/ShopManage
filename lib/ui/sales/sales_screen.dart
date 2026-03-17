@@ -829,16 +829,16 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
 
             // ── Grand Total + Save ──────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.textPrimary,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.divider, width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
@@ -850,34 +850,50 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'TOTAL SHEETS', 
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5), 
-                            fontSize: 9, 
+                            color: AppColors.textSecondary, 
+                            fontSize: 10, 
                             fontWeight: FontWeight.w900, 
-                            letterSpacing: 1.5
+                            letterSpacing: 1.2
                           )
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
                           '${_lines.where((l) => l.stockRow != null).fold<int>(0, (sum, l) => sum + l.quantity)}',
                           style: const TextStyle(
-                            color: Colors.white, 
-                            fontSize: 28, 
+                            color: AppColors.textPrimary, 
+                            fontSize: 32, 
                             fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5
+                            letterSpacing: -1.0
                           ),
                         ),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.inventory_2_rounded, color: Colors.white24, size: 20),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                         Text(
+                          'READY FOR', 
+                          style: TextStyle(
+                            color: AppColors.textSecondary, 
+                            fontSize: 9, 
+                            fontWeight: FontWeight.w900, 
+                            letterSpacing: 1.0
+                          )
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'DISPATCH',
+                          style: TextStyle(
+                            color: AppColors.primary, 
+                            fontSize: 12, 
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 );
@@ -886,58 +902,31 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                   children: [
                     Expanded(
                       flex: 2,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1.5),
+                      child: OutlinedButton(
+                        onPressed: _isSaving ? null : () => _saveChallan(print: false),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textPrimary,
+                          side: const BorderSide(color: AppColors.divider, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: TextButton(
-                          onPressed: _isSaving ? null : () => _saveChallan(print: false),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.5)),
-                            backgroundColor: Colors.white.withValues(alpha: 0.05),
-                          ),
-                          child: const Text('Save Only', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.2)),
-                        ),
+                        child: const Text('Save Only', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 3,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.cardSales,
-                              AppColors.cardSales.withValues(alpha: 0.8),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.cardSales.withValues(alpha: 0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                      child: ElevatedButton.icon(
+                        onPressed: _isSaving ? null : () => _saveChallan(print: true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.cardSales,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
                         ),
-                        child: ElevatedButton.icon(
-                          onPressed: _isSaving ? null : () => _saveChallan(print: true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            shadowColor: Colors.transparent,
-                            elevation: 0,
-                          ),
-                          icon: const Icon(Icons.print_rounded, size: 18),
-                          label: const Text('Save & Print', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.3)),
-                        ),
+                        icon: const Icon(Icons.print_rounded, size: 18),
+                        label: const Text('Save & Print', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.3)),
                       ),
                     ),
                   ],
@@ -947,7 +936,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     totalSection,
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     buttonSection,
                   ],
                 );
@@ -964,6 +953,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     return AdminScaffold(
       backgroundColor: _editingInvoiceNo != null ? const Color(0xFFF1F5F9) : AppColors.scaffoldBg,
       title: 'Sales Entry',
+      maxWidth: 1200,
       selectedShopId: ref.watch(activeShopProvider)?.id,
       onShopChanged: (val) {
         if (val == null) {
@@ -978,33 +968,28 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       },
       drawer: const AppDrawer(currentRoute: '/sales'),
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              child: isWide
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 5, child: SingleChildScrollView(child: formContent)),
-                        Expanded(flex: 2, child: recentSalesContent), 
-                      ],
-                    )
-                  : SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          formContent,
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: recentSalesContent,
-                          ),
-                        ],
+          isWide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 5, child: SingleChildScrollView(child: formContent)),
+                    Expanded(flex: 2, child: recentSalesContent),
+                  ],
+                )
+              : SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      formContent,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: recentSalesContent,
                       ),
-                    ),
-            ),
-          ),
-          if (_isSaving)
-            const LoadingOverlay(message: 'Saving Invoice...'),
+                    ],
+                  ),
+                ),
+          if (_isSaving) const LoadingOverlay(message: 'Saving Invoice...'),
         ],
       ),
     );
